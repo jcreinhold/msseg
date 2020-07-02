@@ -74,7 +74,8 @@ class Tiramisu(nn.Module):
             cur_channels_count += (growth_rate*n_layers)
             skip_connection_channel_counts.insert(0, cur_channels_count)
             self.transDownBlocks.append(self._trans_down(
-                cur_channels_count, dropout_rate=dropout_rate))
+                cur_channels_count, cur_channels_count,
+                dropout_rate=dropout_rate))
 
         self.bottleneck = self._bottleneck(
             cur_channels_count, growth_rate, bottleneck_layers,

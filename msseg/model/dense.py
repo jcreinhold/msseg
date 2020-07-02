@@ -25,31 +25,49 @@ from torch import nn
 ACTIVATION = nn.GELU
 
 
-class DenseLayer2d(nn.Sequential):
+class ConvLayer(nn.Sequential):
+
+    _norm = None
+    _pad  = None
+    _conv = None
+    _drop = None
+    _maxp = None
+    _ksz  = None
+
     def __init__(self, in_channels:int, growth_rate:int, dropout_rate:float=0.2):
         super().__init__()
-        kernel_size = 3
-        self.add_module('norm', nn.BatchNorm2d(in_channels))
+        self.add_module('norm', self._norm(in_channels))
         self.add_module('act', ACTIVATION())
-        self.add_module('pad', nn.ReplicationPad2d(kernel_size // 2))
-        self.add_module('conv', nn.Conv2d(in_channels, growth_rate, kernel_size,
+        if self._ksz > 2:
+            self.add_module('pad', self._pad(self._ksz // 2))
+        self.add_module('conv', self._conv(in_channels, growth_rate, self._ksz,
                                           bias=False))
-        self.add_module('drop', nn.Dropout2d(dropout_rate))
+        self.add_module('drop', self._drop(dropout_rate))
+        if self._maxp is not None:
+            self.add_module('maxpool', self._maxp(2))
 
 
-class DenseLayer3d(nn.Sequential):
-    def __init__(self, in_channels:int, growth_rate:int, dropout_rate:float=0.2):
-        super().__init__()
-        kernel_size = 3
-        self.add_module('norm', nn.BatchNorm3d(in_channels))
-        self.add_module('act', ACTIVATION())
-        self.add_module('pad', nn.ReplicationPad3d(kernel_size // 2))
-        self.add_module('conv', nn.Conv3d(in_channels, growth_rate, kernel_size,
-                                          bias=False))
-        self.add_module('drop', nn.Dropout3d(dropout_rate))
+class ConvLayer2d(ConvLayer):
+    _norm = nn.BatchNorm2d
+    _pad  = nn.ReplicationPad2d
+    _conv = nn.Conv2d
+    _drop = nn.Dropout2d
+    _maxp = None
+    _ksz  = 3
+
+
+class ConvLayer3d(ConvLayer):
+    _norm = nn.BatchNorm3d
+    _pad  = nn.ReplicationPad3d
+    _conv = nn.Conv3d
+    _drop = nn.Dropout3d
+    _maxp = None
+    _ksz  = 3
 
 
 class DenseBlock(nn.Module):
+
+    _layer = None
 
     def __init__(self, in_channels:int, growth_rate:int, n_layers:int,
                  upsample:bool=False, dropout_rate:float=0.2):
@@ -59,6 +77,9 @@ class DenseBlock(nn.Module):
         self.n_layers = n_layers
         self.upsample = upsample
         self.dropout_rate = dropout_rate
+        self.layers = nn.ModuleList([
+            self._layer(ic, self.growth_rate, self.dropout_rate)
+            for ic in self.in_channels_range])
 
     def forward(self, x:Tensor):
         if self.upsample:
@@ -83,107 +104,93 @@ class DenseBlock(nn.Module):
 
 
 class DenseBlock2d(DenseBlock):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.layers = nn.ModuleList([
-            DenseLayer2d(ic, self.growth_rate, self.dropout_rate)
-            for ic in self.in_channels_range])
+    _layer = ConvLayer2d
 
 
 class DenseBlock3d(DenseBlock):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.layers = nn.ModuleList([
-            DenseLayer3d(ic, self.growth_rate, self.dropout_rate)
-            for ic in self.in_channels_range])
+    _layer = ConvLayer3d
 
 
-class TransitionDown2d(nn.Sequential):
-    def __init__(self, in_channels:int, dropout_rate:float=0.2):
-        super().__init__()
-        kernel_size = 1
-        self.add_module('norm', nn.BatchNorm2d(num_features=in_channels))
-        self.add_module('act', ACTIVATION())
-        self.add_module('conv', nn.Conv2d(in_channels, in_channels, kernel_size,
-                                          bias=False))
-        self.add_module('drop', nn.Dropout2d(dropout_rate))
-        self.add_module('maxpool', nn.MaxPool2d(2))
+class TransitionDown2d(ConvLayer):
+    _norm = nn.BatchNorm2d
+    _pad  = nn.ReplicationPad2d
+    _conv = nn.Conv2d
+    _drop = nn.Dropout2d
+    _maxp = nn.MaxPool2d
+    _ksz  = 1
 
 
-class TransitionDown3d(nn.Sequential):
-    def __init__(self, in_channels:int, dropout_rate:float=0.2):
-        super().__init__()
-        kernel_size = 1
-        self.add_module('norm', nn.BatchNorm3d(num_features=in_channels))
-        self.add_module('act', ACTIVATION())
-        self.add_module('conv', nn.Conv3d(in_channels, in_channels, kernel_size,
-                                          bias=False))
-        self.add_module('drop', nn.Dropout3d(dropout_rate))
-        self.add_module('maxpool', nn.MaxPool3d(2))
+class TransitionDown3d(ConvLayer):
+    _norm = nn.BatchNorm3d
+    _pad  = nn.ReplicationPad3d
+    _conv = nn.Conv3d
+    _drop = nn.Dropout3d
+    _maxp = nn.MaxPool3d
+    _ksz  = 1
 
 
-class TransitionUp2d(nn.Module):
+class TransitionUp(nn.Module):
+
+    _conv_trans = None
+
     def __init__(self, in_channels:int, out_channels:int):
         super().__init__()
         kernel_size = 3
-        self.convTrans = nn.ConvTranspose2d(
+        _crop = None
+        self.convTrans = self._conv_trans(
             in_channels, out_channels, kernel_size,
             stride=2, bias=False)
 
     def forward(self, x:Tensor, skip:Tensor) -> Tensor:
-        _, _, h, w = skip.shape
         out = self.convTrans(x)
-        out = center_crop2d(out, h, w)
+        out = self._crop_to_y(out, skip)
         out = torch.cat([out, skip], 1)
         return out
 
-
-class TransitionUp3d(nn.Module):
-    def __init__(self, in_channels:int, out_channels:int):
-        super().__init__()
-        kernel_size = 3
-        self.convTrans = nn.ConvTranspose3d(
-            in_channels, out_channels, kernel_size,
-            stride=2, padding=0, bias=False)
-
-    def forward(self, x:Tensor, skip:Tensor) -> Tensor:
-        _, _, h, w, d = skip.shape
-        out = self.convTrans(x)
-        out = center_crop3d(out, h, w, d)
-        out = torch.cat([out, skip], 1)
-        return out
+    @staticmethod
+    def _crop_to_y(x:Tensor, y:Tensor):
+        raise NotImplementedError
 
 
-class Bottleneck2d(nn.Sequential):
+class TransitionUp2d(TransitionUp):
+    _conv_trans = nn.ConvTranspose2d
+
+    @staticmethod
+    def _crop_to_y(x:Tensor, y:Tensor) -> Tensor:
+        _, _, max_height, max_width = y.shape
+        _, _, h, w = x.size()
+        w = (w - max_width) // 2
+        h = (h - max_height) // 2
+        return x[:, :, h:(h + max_height), w:(w + max_width)]
+
+
+class TransitionUp3d(TransitionUp):
+    _conv_trans = nn.ConvTranspose3d
+
+    @staticmethod
+    def _crop_to_y(x:Tensor, y:Tensor) -> Tensor:
+        _, _, max_height, max_width, max_depth = y.shape
+        _, _, h, w, d = x.size()
+        w = (w - max_width) // 2
+        h = (h - max_height) // 2
+        d = (d - max_depth) // 2
+        return x[:, :, d:(d + max_depth), h:(h + max_height), w:(w + max_width)]
+
+
+class Bottleneck(nn.Sequential):
+
+    _layer = None
+
     def __init__(self, in_channels:int, growth_rate:int, n_layers:int, dropout_rate:float=0.2):
         super().__init__()
-        self.add_module('bottleneck', DenseBlock2d(
+        self.add_module('bottleneck', self._layer(
             in_channels, growth_rate, n_layers,
             upsample=True, dropout_rate=dropout_rate))
 
 
-class Bottleneck3d(nn.Sequential):
-    def __init__(self, in_channels:int, growth_rate:int, n_layers:int, dropout_rate:float=0.2):
-        super().__init__()
-        self.add_module('bottleneck', DenseBlock3d(
-            in_channels, growth_rate, n_layers,
-            upsample=True, dropout_rate=dropout_rate))
+class Bottleneck2d(Bottleneck):
+    _layer = DenseBlock2d
 
 
-def center_crop2d(x:Tensor, max_height:int, max_width:int) -> Tensor:
-    _, _, h, w = x.size()
-    w = (w - max_width) // 2
-    h = (h - max_height) // 2
-    return x[:, :, h:(h + max_height), w:(w + max_width)]
-
-
-def center_crop3d(x:Tensor, max_height:int, max_width:int, max_depth:int) -> Tensor:
-    _, _, h, w, d = x.size()
-    w = (w - max_width) // 2
-    h = (h - max_height) // 2
-    d = (d - max_depth) // 2
-    return x[:, :, d:(d + max_depth), h:(h + max_height), w:(w + max_width)]
-
-
-if __name__ == "__main__":
-    pass
+class Bottleneck3d(Bottleneck):
+    _layer = DenseBlock3d
