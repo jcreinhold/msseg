@@ -131,8 +131,9 @@ class TransitionUp2d(nn.Module):
             stride=2, bias=False)
 
     def forward(self, x:Tensor, skip:Tensor) -> Tensor:
+        _, _, h, w = skip.shape
         out = self.convTrans(x)
-        out = center_crop2d(out, skip.size(2), skip.size(3))
+        out = center_crop2d(out, h, w)
         out = torch.cat([out, skip], 1)
         return out
 
@@ -146,8 +147,9 @@ class TransitionUp3d(nn.Module):
             stride=2, padding=0, bias=False)
 
     def forward(self, x:Tensor, skip:Tensor) -> Tensor:
+        _, _, h, w, d = skip.shape
         out = self.convTrans(x)
-        out = center_crop3d(out, skip.size(2), skip.size(3), skip.size(4))
+        out = center_crop3d(out, h, w, d)
         out = torch.cat([out, skip], 1)
         return out
 
@@ -170,17 +172,17 @@ class Bottleneck3d(nn.Sequential):
 
 def center_crop2d(x:Tensor, max_height:int, max_width:int) -> Tensor:
     _, _, h, w = x.size()
-    xy1 = (w - max_width) // 2
-    xy2 = (h - max_height) // 2
-    return x[:, :, xy2:(xy2 + max_height), xy1:(xy1 + max_width)]
+    w = (w - max_width) // 2
+    h = (h - max_height) // 2
+    return x[:, :, h:(h + max_height), w:(w + max_width)]
 
 
 def center_crop3d(x:Tensor, max_height:int, max_width:int, max_depth:int) -> Tensor:
     _, _, h, w, d = x.size()
-    xy1 = (w - max_width) // 2
-    xy2 = (h - max_height) // 2
-    xy3 = (d - max_depth) // 2
-    return x[:, :, xy3:(xy3 + max_depth), xy2:(xy2 + max_height), xy1:(xy1 + max_width)]
+    w = (w - max_width) // 2
+    h = (h - max_height) // 2
+    d = (d - max_depth) // 2
+    return x[:, :, d:(d + max_depth), h:(h + max_height), w:(w + max_width)]
 
 
 if __name__ == "__main__":
