@@ -18,6 +18,8 @@ __all__ = ['Bottleneck2d',
            'TransitionUp2d',
            'TransitionUp3d']
 
+from typing import *
+
 import torch
 from torch import Tensor
 from torch import nn
@@ -81,7 +83,7 @@ class DenseBlock(nn.Module):
             self._layer(ic, self.growth_rate, self.dropout_rate)
             for ic in self.in_channels_range])
 
-    def forward(self, x:Tensor):
+    def forward(self, x:Tensor) -> Tensor:
         if self.upsample:
             new_features = []
             # We pass all previous activations into each dense layer normally
@@ -99,7 +101,7 @@ class DenseBlock(nn.Module):
             return x
 
     @property
-    def in_channels_range(self):
+    def in_channels_range(self) -> List[int]:
         return [self.in_channels + i * self.growth_rate for i in range(self.n_layers)]
 
 
@@ -148,7 +150,7 @@ class TransitionUp(nn.Module):
         return out
 
     @staticmethod
-    def _crop_to_y(x:Tensor, y:Tensor):
+    def _crop_to_y(x:Tensor, y:Tensor) -> Tensor:
         raise NotImplementedError
 
 

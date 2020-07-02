@@ -15,7 +15,7 @@ from typing import *
 
 import os
 
-def n_dirname(path:str, n:int):
+def n_dirname(path:str, n:int) -> str:
     """ return n-th dirname from basename """
     dirname = path
     for _ in range(n):

@@ -24,4 +24,7 @@ class ExperimentConfig:
 
 
 if __name__ == "__main__":
-    ExperimentConfig(optim_params={"lr": 0.1}, network_params={"dropout_rate": 0.2})
+    ExperimentConfig(
+        data_params={"patch_size": 16},
+        optim_params={"lr": 0.1},
+        network_params={"dropout_rate": 0.2})
