@@ -102,3 +102,6 @@ ENV/
 
 # pycharm
 .idea
+
+# pytorch lightning
+lightning_logs/

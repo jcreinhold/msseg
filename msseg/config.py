@@ -18,6 +18,7 @@ from dataclasses import dataclass
 
 @dataclass
 class ExperimentConfig:
+    data_params: Dict
     optim_params: Dict
     network_params: Dict
 
