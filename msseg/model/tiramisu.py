@@ -31,6 +31,7 @@ from msseg.model.dense import *
 class Tiramisu(nn.Module):
 
     _conv       = None
+    _pad        = None
     _denseblock = None
     _bottleneck = None
     _trans_down = None
@@ -48,10 +49,14 @@ class Tiramisu(nn.Module):
         super().__init__()
         self.down_blocks = down_blocks
         self.up_blocks = up_blocks
+        first_kernel_size = 3
+        final_kernel_size = 1
         skip_connection_channel_counts = []
 
-        self.firstConv = self._conv(in_channels, out_chans_first_conv,
-                                    kernel_size=3, stride=1, padding=1, bias=True)
+        self.firstConv = nn.Sequential(
+            self._pad(first_kernel_size // 2),
+            self._conv(in_channels, out_chans_first_conv,
+                       first_kernel_size, bias=False))
         cur_channels_count = out_chans_first_conv
 
         ## Downsampling path ##
@@ -75,7 +80,8 @@ class Tiramisu(nn.Module):
         ## Upsampling path ##
         self.transUpBlocks = nn.ModuleList([])
         self.denseBlocksUp = nn.ModuleList([])
-        for i, (n_layers, sccc) in enumerate(zip(up_blocks, skip_connection_channel_counts), 1):
+        up_info = zip(up_blocks, skip_connection_channel_counts)
+        for i, (n_layers, sccc) in enumerate(up_info, 1):
             self.transUpBlocks.append(self._trans_up(
                 prev_block_channels, prev_block_channels))
             cur_channels_count = prev_block_channels + sccc
@@ -87,7 +93,7 @@ class Tiramisu(nn.Module):
             cur_channels_count += prev_block_channels
 
         self.finalConv = self._conv(cur_channels_count, out_channels,
-                                    kernel_size=1, stride=1, padding=0, bias=True)
+                                    final_kernel_size, bias=True)
 
     def forward(self, x:Tensor) -> Tensor:
         out = self.firstConv(x)
@@ -107,6 +113,7 @@ class Tiramisu(nn.Module):
 
 class Tiramisu2d(Tiramisu):
     _conv       = nn.Conv2d
+    _pad        = nn.ReplicationPad2d
     _denseblock = DenseBlock2d
     _bottleneck = Bottleneck2d
     _trans_down = TransitionDown2d
@@ -115,6 +122,7 @@ class Tiramisu2d(Tiramisu):
 
 class Tiramisu3d(Tiramisu):
     _conv       = nn.Conv3d
+    _pad        = nn.ReplicationPad3d
     _denseblock = DenseBlock3d
     _bottleneck = Bottleneck3d
     _trans_down = TransitionDown3d

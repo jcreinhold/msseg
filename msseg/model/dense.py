@@ -28,20 +28,24 @@ ACTIVATION = nn.GELU
 class DenseLayer2d(nn.Sequential):
     def __init__(self, in_channels:int, growth_rate:int, dropout_rate:float=0.2):
         super().__init__()
+        kernel_size = 3
         self.add_module('norm', nn.BatchNorm2d(in_channels))
         self.add_module('act', ACTIVATION())
-        self.add_module('conv', nn.Conv2d(in_channels, growth_rate, kernel_size=3,
-                                          stride=1, padding=1, bias=True))
+        self.add_module('pad', nn.ReplicationPad2d(kernel_size // 2))
+        self.add_module('conv', nn.Conv2d(in_channels, growth_rate, kernel_size,
+                                          bias=False))
         self.add_module('drop', nn.Dropout2d(dropout_rate))
 
 
 class DenseLayer3d(nn.Sequential):
     def __init__(self, in_channels:int, growth_rate:int, dropout_rate:float=0.2):
         super().__init__()
+        kernel_size = 3
         self.add_module('norm', nn.BatchNorm3d(in_channels))
         self.add_module('act', ACTIVATION())
-        self.add_module('conv', nn.Conv3d(in_channels, growth_rate, kernel_size=3,
-                                          stride=1, padding=1, bias=True))
+        self.add_module('pad', nn.ReplicationPad3d(kernel_size // 2))
+        self.add_module('conv', nn.Conv3d(in_channels, growth_rate, kernel_size,
+                                          bias=False))
         self.add_module('drop', nn.Dropout3d(dropout_rate))
 
 
@@ -97,11 +101,11 @@ class DenseBlock3d(DenseBlock):
 class TransitionDown2d(nn.Sequential):
     def __init__(self, in_channels:int, dropout_rate:float=0.2):
         super().__init__()
+        kernel_size = 1
         self.add_module('norm', nn.BatchNorm2d(num_features=in_channels))
         self.add_module('act', ACTIVATION())
-        self.add_module('conv', nn.Conv2d(in_channels, in_channels,
-                                          kernel_size=1, stride=1,
-                                          padding=0, bias=True))
+        self.add_module('conv', nn.Conv2d(in_channels, in_channels, kernel_size,
+                                          bias=False))
         self.add_module('drop', nn.Dropout2d(dropout_rate))
         self.add_module('maxpool', nn.MaxPool2d(2))
 
@@ -109,11 +113,11 @@ class TransitionDown2d(nn.Sequential):
 class TransitionDown3d(nn.Sequential):
     def __init__(self, in_channels:int, dropout_rate:float=0.2):
         super().__init__()
+        kernel_size = 1
         self.add_module('norm', nn.BatchNorm3d(num_features=in_channels))
         self.add_module('act', ACTIVATION())
-        self.add_module('conv', nn.Conv3d(in_channels, in_channels,
-                                          kernel_size=1, stride=1,
-                                          padding=0, bias=True))
+        self.add_module('conv', nn.Conv3d(in_channels, in_channels, kernel_size,
+                                          bias=False))
         self.add_module('drop', nn.Dropout3d(dropout_rate))
         self.add_module('maxpool', nn.MaxPool3d(2))
 
@@ -121,9 +125,10 @@ class TransitionDown3d(nn.Sequential):
 class TransitionUp2d(nn.Module):
     def __init__(self, in_channels:int, out_channels:int):
         super().__init__()
+        kernel_size = 3
         self.convTrans = nn.ConvTranspose2d(
-            in_channels=in_channels, out_channels=out_channels,
-            kernel_size=3, stride=2, padding=0, bias=True)
+            in_channels, out_channels, kernel_size,
+            stride=2, bias=False)
 
     def forward(self, x:Tensor, skip:Tensor) -> Tensor:
         out = self.convTrans(x)
@@ -135,9 +140,10 @@ class TransitionUp2d(nn.Module):
 class TransitionUp3d(nn.Module):
     def __init__(self, in_channels:int, out_channels:int):
         super().__init__()
+        kernel_size = 3
         self.convTrans = nn.ConvTranspose3d(
-            in_channels=in_channels, out_channels=out_channels,
-            kernel_size=3, stride=2, padding=0, bias=True)
+            in_channels, out_channels, kernel_size,
+            stride=2, padding=0, bias=False)
 
     def forward(self, x:Tensor, skip:Tensor) -> Tensor:
         out = self.convTrans(x)
