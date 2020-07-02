@@ -29,42 +29,43 @@ ACTIVATION = nn.GELU
 
 class ConvLayer(nn.Sequential):
 
-    _norm = None
-    _pad  = None
-    _conv = None
-    _drop = None
-    _maxp = None
-    _ksz  = None
+    _conv        = None
+    _dropout     = None
+    _kernel_size = None
+    _maxpool     = None
+    _norm        = None
+    _pad         = None
 
     def __init__(self, in_channels:int, growth_rate:int, dropout_rate:float=0.2):
         super().__init__()
         self.add_module('norm', self._norm(in_channels))
         self.add_module('act', ACTIVATION())
-        if self._ksz > 2:
-            self.add_module('pad', self._pad(self._ksz // 2))
-        self.add_module('conv', self._conv(in_channels, growth_rate, self._ksz,
-                                          bias=False))
-        self.add_module('drop', self._drop(dropout_rate))
-        if self._maxp is not None:
-            self.add_module('maxpool', self._maxp(2))
+        if self._kernel_size > 2:
+            self.add_module('pad', self._pad(self._kernel_size // 2))
+        self.add_module('conv', self._conv(in_channels, growth_rate,
+                                           self._kernel_size,
+                                           bias=False))
+        self.add_module('drop', self._dropout(dropout_rate))
+        if self._maxpool is not None:
+            self.add_module('maxpool', self._maxpool(2))
 
 
 class ConvLayer2d(ConvLayer):
-    _norm = nn.BatchNorm2d
-    _pad  = nn.ReplicationPad2d
-    _conv = nn.Conv2d
-    _drop = nn.Dropout2d
-    _maxp = None
-    _ksz  = 3
+    _conv        = nn.Conv2d
+    _dropout     = nn.Dropout2d
+    _kernel_size = 3
+    _maxpool     = None
+    _norm        = nn.BatchNorm2d
+    _pad         = nn.ReplicationPad2d
 
 
 class ConvLayer3d(ConvLayer):
-    _norm = nn.BatchNorm3d
-    _pad  = nn.ReplicationPad3d
-    _conv = nn.Conv3d
-    _drop = nn.Dropout3d
-    _maxp = None
-    _ksz  = 3
+    _conv        = nn.Conv3d
+    _dropout     = nn.Dropout3d
+    _kernel_size = 3
+    _maxpool     = None
+    _norm        = nn.BatchNorm3d
+    _pad         = nn.ReplicationPad3d
 
 
 class DenseBlock(nn.Module):
@@ -114,21 +115,21 @@ class DenseBlock3d(DenseBlock):
 
 
 class TransitionDown2d(ConvLayer):
+    _conv = nn.Conv2d
+    _dropout = nn.Dropout2d
+    _kernel_size  = 1
+    _maxpool = nn.MaxPool2d
     _norm = nn.BatchNorm2d
     _pad  = nn.ReplicationPad2d
-    _conv = nn.Conv2d
-    _drop = nn.Dropout2d
-    _maxp = nn.MaxPool2d
-    _ksz  = 1
 
 
 class TransitionDown3d(ConvLayer):
+    _conv = nn.Conv3d
+    _dropout = nn.Dropout3d
+    _kernel_size  = 1
+    _maxpool = nn.MaxPool3d
     _norm = nn.BatchNorm3d
     _pad  = nn.ReplicationPad3d
-    _conv = nn.Conv3d
-    _drop = nn.Dropout3d
-    _maxp = nn.MaxPool3d
-    _ksz  = 1
 
 
 class TransitionUp(nn.Module):

@@ -35,10 +35,10 @@ from msseg.model.dense import *
 
 class Tiramisu(nn.Module):
 
-    _conv       = None
-    _pad        = None
-    _denseblock = None
     _bottleneck = None
+    _conv       = None
+    _denseblock = None
+    _pad        = None
     _trans_down = None
     _trans_up   = None
 
@@ -118,19 +118,19 @@ class Tiramisu(nn.Module):
 
 
 class Tiramisu2d(Tiramisu):
-    _conv       = nn.Conv2d
-    _pad        = nn.ReplicationPad2d
-    _denseblock = DenseBlock2d
     _bottleneck = Bottleneck2d
+    _conv       = nn.Conv2d
+    _denseblock = DenseBlock2d
+    _pad        = nn.ReplicationPad2d
     _trans_down = TransitionDown2d
     _trans_up   = TransitionUp2d
 
 
 class Tiramisu3d(Tiramisu):
-    _conv       = nn.Conv3d
-    _pad        = nn.ReplicationPad3d
-    _denseblock = DenseBlock3d
     _bottleneck = Bottleneck3d
+    _conv       = nn.Conv3d
+    _denseblock = DenseBlock3d
+    _pad        = nn.ReplicationPad3d
     _trans_down = TransitionDown3d
     _trans_up   = TransitionUp3d
 
