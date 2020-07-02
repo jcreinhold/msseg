@@ -6,6 +6,11 @@ msseg.model.tiramisu2d
 PyTorch implementation of the Tiramisu network architecture [1]
 Implementation based on [2]. (2D version)
 
+Changes from [2] include:
+  1) removal of bias from conv layers,
+  2) change zero padding to replication padding,
+  3) cosmetic changes for brevity, clarity, consistency
+
 References:
   [1] Jégou, Simon, et al. "The one hundred layers tiramisu:
       Fully convolutional densenets for semantic segmentation."
