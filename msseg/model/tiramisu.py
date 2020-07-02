@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-msseg.model.tiramisu2d
+msseg.model.tiramisu
 
 PyTorch implementation of the Tiramisu network architecture [1]
 Implementation based on [2]. (2D version)
