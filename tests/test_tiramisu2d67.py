@@ -50,7 +50,11 @@ DATA_DIR = join(msseg_dir, "tests/test_data/")
 
 default_exp_config = ExperimentConfig(
     data_params=dict(
-        test = None
+        batch_size = 4,
+        num_workers = 0,
+        patch_size = (3, 32, 32),
+        queue_length = 4,
+        samples_per_volume = 4
     ),
     network_params=dict(
         in_channels = 3,
@@ -118,19 +122,19 @@ class Tiramisu2d67(pl.LightningModule):
         transform = Compose(transforms)
 
         subjects_dataset = torchio.ImagesDataset(subjects_list, transform=transform)
-        patch_size = (3, 32, 32)
-        queue_length = 4
-        samples_per_volume = 4
-        sampler = torchio.data.UniformSampler(patch_size)
+
+        sampler = torchio.data.UniformSampler(self.config.data_params['patch_size'])
         patches_queue = torchio.Queue(
-            subjects_dataset,  # instance of torchio.ImagesDataset
-            queue_length,
-            samples_per_volume,
+            subjects_dataset,
+            self.config.data_params['queue_length'],
+            self.config.data_params['samples_per_volume'],
             sampler,
-            num_workers=0,
+            num_workers=self.config.data_params['num_workers'],
             shuffle_subjects=True,
             shuffle_patches=True)
-        train_dataloader = DataLoader(patches_queue, batch_size=4)
+        train_dataloader = DataLoader(
+            patches_queue,
+            batch_size=self.config.data_params['batch_size'])
         return train_dataloader
 
     def val_dataloader(self):
@@ -141,19 +145,18 @@ class Tiramisu2d67(pl.LightningModule):
         subjects_list = [subject_a]
 
         subjects_dataset = torchio.ImagesDataset(subjects_list)
-        patch_size = (3, 32, 32)
-        queue_length = 4
-        samples_per_volume = 4
-        sampler = torchio.data.UniformSampler(patch_size)
+        sampler = torchio.data.UniformSampler(self.config.data_params['patch_size'])
         patches_queue = torchio.Queue(
-            subjects_dataset,  # instance of torchio.ImagesDataset
-            queue_length,
-            samples_per_volume,
+            subjects_dataset,
+            self.config.data_params['queue_length'],
+            self.config.data_params['samples_per_volume'],
             sampler,
-            num_workers=0,
+            num_workers=self.config.data_params['num_workers'],
             shuffle_subjects=False,
             shuffle_patches=False)
-        val_dataloader = DataLoader(patches_queue, batch_size=4)
+        val_dataloader = DataLoader(
+            patches_queue,
+            batch_size=self.config.data_params['batch_size'])
         return val_dataloader
 
 
