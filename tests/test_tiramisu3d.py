@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-msseg.experiment.tiramisu3d67
+msseg.tests.tiramisu3d
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: Jul 02, 2020
@@ -74,7 +74,7 @@ default_exp_config = ExperimentConfig(
 )
 
 
-class Tiramisu3d67(pl.LightningModule):
+class LightningTiramisu3d(pl.LightningModule):
 
     def __init__(self, config:ExperimentConfig=default_exp_config):
         super().__init__()
@@ -160,9 +160,9 @@ class Tiramisu3d67(pl.LightningModule):
         return val_dataloader
 
 
-class TestTiramisu3d67(unittest.TestCase):
+class TestTiramisu3d(unittest.TestCase):
     def setUp(self):
-        self.net = Tiramisu3d67()
+        self.net = LightningTiramisu3d()
         self.out_dir = tempfile.mkdtemp()
 
     def tearDown(self):
