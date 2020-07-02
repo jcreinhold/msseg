@@ -41,6 +41,7 @@ from torchio.transforms import (
 import msseg
 from msseg.config import ExperimentConfig
 from msseg.model import Tiramisu2d
+from msseg.loss import binary_focal_loss, dice_loss
 from msseg.util import n_dirname
 
 seed_everything(1337)
@@ -79,6 +80,7 @@ class LightningTiramisu2d(pl.LightningModule):
     def __init__(self, config:ExperimentConfig=default_exp_config):
         super().__init__()
         self.config = config
+        self.criterion = F.binary_cross_entropy_with_logits
         self.net = Tiramisu2d(**config.network_params)
 
     def forward(self, x:Tensor) -> Tensor:
@@ -88,7 +90,7 @@ class LightningTiramisu2d(pl.LightningModule):
         x = batch['t1'][torchio.DATA].squeeze()
         y = batch['label'][torchio.DATA].squeeze()[:,1:2,...]
         y_hat = self.forward(x)
-        loss = F.binary_cross_entropy_with_logits(y_hat, y)
+        loss = self.criterion(y_hat, y)
         tensorboard_logs = {'train_loss': loss}
         return {'loss': loss, 'log': tensorboard_logs}
 
@@ -96,7 +98,7 @@ class LightningTiramisu2d(pl.LightningModule):
         x = batch['t1'][torchio.DATA].squeeze()
         y = batch['label'][torchio.DATA].squeeze()[:,1:2,...]
         y_hat = self.forward(x)
-        loss = F.binary_cross_entropy_with_logits(y_hat, y)
+        loss = self.criterion(y_hat, y)
         return {'val_loss': loss}
 
     def validation_epoch_end(self, outputs):
@@ -172,6 +174,18 @@ class TestTiramisu2d(unittest.TestCase):
     def test_fit(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
+            trainer = Trainer(
+                default_root_dir=self.out_dir,
+                fast_dev_run=True,
+                progress_bar_refresh_rate=0)
+            trainer.fit(self.net)
+
+    def test_combo_loss(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            def criterion(x, y):
+                return binary_focal_loss(x, y) + dice_loss(x, y)
+            self.net.criterion = criterion
             trainer = Trainer(
                 default_root_dir=self.out_dir,
                 fast_dev_run=True,
