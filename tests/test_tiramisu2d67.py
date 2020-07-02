@@ -11,9 +11,11 @@ __all__ = []
 
 from typing import *
 
+import contextlib
 import os
 from os.path import join
-import contextlib
+import shutil
+import tempfile
 import unittest
 import warnings
 
@@ -158,14 +160,19 @@ class Tiramisu2d67(pl.LightningModule):
 class TestTiramisu2d67(unittest.TestCase):
     def setUp(self):
         self.net = Tiramisu2d67()
+        self.out_dir = tempfile.mkdtemp()
 
     def tearDown(self):
+        shutil.rmtree(self.out_dir)
         del self.net
 
     def test_fit(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            trainer = Trainer(fast_dev_run=True, progress_bar_refresh_rate=0)
+            trainer = Trainer(
+                default_root_dir=self.out_dir,
+                fast_dev_run=True,
+                progress_bar_refresh_rate=0)
             trainer.fit(self.net)
 
 
