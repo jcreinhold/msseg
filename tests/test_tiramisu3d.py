@@ -22,7 +22,7 @@ with open(os.devnull, "w") as f:
         import torchio
 
 import msseg
-from msseg.loss import binary_focal_loss, dice_loss
+from msseg.loss import binary_combo_loss
 from msseg.util import n_dirname
 
 from _test_configs import test_lightningtiramisu3d_config
@@ -73,9 +73,7 @@ class TestTiramisu3d(unittest.TestCase):
     def test_combo_loss(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            def criterion(x, y):
-                return binary_focal_loss(x, y) + dice_loss(x, y)
-            self.net.criterion = criterion
+            self.net.criterion = binary_combo_loss
             trainer = Trainer(
                 default_root_dir=self.out_dir,
                 fast_dev_run=True,

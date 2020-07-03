@@ -9,12 +9,16 @@ References:
     [1] https://gitlab.com/shan-deep-networks/pytorch-metrics/
     [2] https://github.com/catalyst-team/catalyst/
     [3] https://github.com/facebookresearch/fvcore
+    [4] S.A. Taghanaki et al. "Combo loss: Handling input and
+        output imbalance in multi-organ segmentation." Computerized
+        Medical Imaging and Graphics 75 (2019): 24-33.
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: Jul 01, 2020
 """
 
-__all__ = ['binary_focal_loss',
+__all__ = ['binary_combo_loss',
+           'binary_focal_loss',
            'dice_loss']
 
 
@@ -60,8 +64,11 @@ def binary_focal_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
                       reduction:str='mean', gamma:float=2.) -> Tensor:
     p = torch.sigmoid(x)
     ce_loss = F.binary_cross_entropy_with_logits(x, y, reduction="none")
-    p_t = p * y + (1 - p) * (1 - y)
-    loss = ce_loss * ((1 - p_t) ** gamma)
+    if gamma > 0.:
+        p_t = p * y + (1 - p) * (1 - y)
+        loss = ce_loss * ((1 - p_t) ** gamma)
+    else:
+        loss = ce_loss
     if weight is not None:
         weight_t = weight * y + (1 - weight) * (1 - y)
         loss = weight_t * loss
@@ -73,4 +80,12 @@ def binary_focal_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
         loss = loss.sum(0)
     else:
         raise NotImplementedError(f'{reduction} not implemented.')
+    return loss
+
+
+def binary_combo_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
+                      reduction:str='mean', gamma:float=0., alpha:float=0.5) -> Tensor:
+    f_loss = binary_focal_loss(x, y, weight, reduction, gamma)
+    d_loss = dice_loss(x, y, reduction=reduction)
+    loss = alpha * f_loss + (1 - alpha) * d_loss
     return loss
