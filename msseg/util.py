@@ -11,9 +11,8 @@ Created on: Jul 01, 2020
 
 __all__ = ['n_dirname']
 
-from typing import *
-
 import os
+
 
 def n_dirname(path:str, n:int) -> str:
     """ return n-th dirname from basename """

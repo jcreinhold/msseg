@@ -4,7 +4,7 @@
 msseg.model.tiramisu
 
 PyTorch implementation of the Tiramisu network architecture [1]
-Implementation based on [2]. (2D version)
+(2D) Implementation based on [2].
 
 Changes from [2] include:
   1) removal of bias from conv layers,

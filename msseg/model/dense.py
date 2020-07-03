@@ -40,14 +40,20 @@ class ConvLayer(nn.Sequential):
         super().__init__()
         self.add_module('norm', self._norm(in_channels))
         self.add_module('act', ACTIVATION())
-        if self._kernel_size > 2:
+        if self._use_padding():
             self.add_module('pad', self._pad(self._kernel_size // 2))
         self.add_module('conv', self._conv(in_channels, growth_rate,
                                            self._kernel_size,
                                            bias=False))
         self.add_module('drop', self._dropout(dropout_rate))
-        if self._maxpool is not None:
+        if self._use_maxpool():
             self.add_module('maxpool', self._maxpool(2))
+
+    def _use_padding(self):
+        return self._kernel_size > 2
+
+    def _use_maxpool(self):
+        return self._maxpool is not None
 
 
 class ConvLayer2d(ConvLayer):

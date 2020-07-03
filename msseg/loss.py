@@ -34,8 +34,7 @@ def per_channel_dice(x:Tensor, y:Tensor, eps:float=0.001, keepdim:bool=False) ->
     return pc_dice
 
 
-def weighted_average(x:Tensor, weight:Tensor) -> Tensor:
-    """ weighted average along second dim of `x`; weight 1d """
+def weighted_channel_avg(x:Tensor, weight:Tensor) -> Tensor:
     weight = weight[None, ...].repeat([x.shape[0], 1])
     weighted = torch.mean(weight * x)
     return weighted
@@ -49,7 +48,7 @@ def dice_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
         if weight is None:
             dice = torch.mean(pc_dice)
         else:
-            dice = weighted_average(pc_dice, weight)
+            dice = weighted_channel_avg(pc_dice, weight)
     elif reduction == 'none':
         dice = pc_dice
     else:
@@ -58,7 +57,7 @@ def dice_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
 
 
 def binary_focal_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
-               reduction:str='mean', gamma:float=2.) -> Tensor:
+                      reduction:str='mean', gamma:float=2.) -> Tensor:
     p = torch.sigmoid(x)
     ce_loss = F.binary_cross_entropy_with_logits(x, y, reduction="none")
     p_t = p * y + (1 - p) * (1 - y)
