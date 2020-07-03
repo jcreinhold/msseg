@@ -19,6 +19,7 @@ from dataclasses import dataclass
 @dataclass
 class ExperimentConfig:
     data_params: Dict
+    lightning_params: Dict
     optim_params: Dict
     network_params: Dict
 
@@ -26,5 +27,6 @@ class ExperimentConfig:
 if __name__ == "__main__":
     ExperimentConfig(
         data_params={"patch_size": 16},
+        lightning_params={"network_dim": 3},
         optim_params={"lr": 0.1},
         network_params={"dropout_rate": 0.2})
