@@ -51,7 +51,7 @@ default_lightningtiramisu3d_config = ExperimentConfig(
         samples_per_volume = 10
     ),
     lightning_params=dict(
-        network_dim=2
+        network_dim=3
     ),
     network_params=dict(
         in_channels = 1,
