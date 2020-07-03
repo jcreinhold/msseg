@@ -29,7 +29,7 @@ from torch import Tensor
 import torch.nn.functional as F
 
 
-def per_channel_dice(x:Tensor, y:Tensor, eps:float=0.001, keepdim:bool=False) -> Tensor:
+def per_channel_dice(x:Tensor, y:Tensor, eps:float=1e-3, keepdim:bool=False) -> Tensor:
     spatial_dims = tuple(range(2 - len(x.shape), 0))
     intersection = torch.sum(x * y, dim=spatial_dims, keepdim=keepdim)
     x_sum = torch.sum(x, dim=spatial_dims, keepdim=keepdim)
@@ -45,7 +45,7 @@ def weighted_channel_avg(x:Tensor, weight:Tensor) -> Tensor:
 
 
 def dice_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
-              reduction:str='mean', eps:float=0.001) -> Tensor:
+              reduction:str='mean', eps:float=1e-3) -> Tensor:
     keepdim = reduction != 'mean'
     pc_dice = per_channel_dice(x, y, eps=eps, keepdim=keepdim)
     if reduction == 'mean':
@@ -62,9 +62,9 @@ def dice_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
 
 def binary_focal_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
                       reduction:str='mean', gamma:float=2.) -> Tensor:
-    p = torch.sigmoid(x)
     ce_loss = F.binary_cross_entropy_with_logits(x, y, reduction="none")
     if gamma > 0.:
+        p = torch.sigmoid(x)
         p_t = p * y + (1 - p) * (1 - y)
         loss = ce_loss * ((1 - p_t) ** gamma)
     else:
