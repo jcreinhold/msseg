@@ -7,7 +7,10 @@ Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: Jul 03, 2020
 """
 
-__all__ = ['LightningTiramisuTester']
+__all__ = ['_create_test_csv',
+           'LightningTiramisuTester']
+
+from typing import *
 
 import contextlib
 import os
@@ -34,10 +37,12 @@ from msseg.experiment.lightningtiramisu import LightningTiramisu
 
 class LightningTiramisuTester(LightningTiramisu):
 
-    def __init__(self, config:ExperimentConfig, data_dir:str):
+    def __init__(self,
+                 config:ExperimentConfig,
+                 subject_list:List[torchio.Subject]):
         super().__init__(config)
         self.criterion = F.binary_cross_entropy_with_logits
-        self.data_dir = data_dir
+        self.subject_list = subject_list
 
     def validation_epoch_end(self, outputs):
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
@@ -48,12 +53,6 @@ class LightningTiramisuTester(LightningTiramisu):
         return AdamW(self.parameters(), **self.config.optim_params)
 
     def train_dataloader(self):
-        subject_a = torchio.Subject(
-            t1=torchio.Image(join(self.data_dir, "img.nii.gz"), type=torchio.INTENSITY),
-            label=torchio.Image(join(self.data_dir, "mask.nii.gz"), type=torchio.LABEL)
-        )
-        subjects_list = [subject_a]
-
         spatial = OneOf(
             {RandomAffine(): 0.8, RandomElasticDeformation(): 0.2},
             p=0.75,
@@ -61,9 +60,11 @@ class LightningTiramisuTester(LightningTiramisu):
         transforms = [spatial]
         transform = Compose(transforms)
 
-        subjects_dataset = torchio.ImagesDataset(subjects_list, transform=transform)
+        subjects_dataset = torchio.ImagesDataset(
+            self.subject_list, transform=transform)
 
-        sampler = torchio.data.UniformSampler(self.config.data_params['patch_size'])
+        sampler = torchio.data.UniformSampler(
+            self.config.data_params['patch_size'])
         patches_queue = torchio.Queue(
             subjects_dataset,
             self.config.data_params['queue_length'],
@@ -78,14 +79,9 @@ class LightningTiramisuTester(LightningTiramisu):
         return train_dataloader
 
     def val_dataloader(self):
-        subject_a = torchio.Subject(
-            t1=torchio.Image(join(self.data_dir, "img.nii.gz"), type=torchio.INTENSITY),
-            label=torchio.Image(join(self.data_dir, "mask.nii.gz"), type=torchio.LABEL)
-        )
-        subjects_list = [subject_a]
-
-        subjects_dataset = torchio.ImagesDataset(subjects_list)
-        sampler = torchio.data.UniformSampler(self.config.data_params['patch_size'])
+        subjects_dataset = torchio.ImagesDataset(self.subject_list)
+        sampler = torchio.data.UniformSampler(
+            self.config.data_params['patch_size'])
         patches_queue = torchio.Queue(
             subjects_dataset,
             self.config.data_params['queue_length'],
@@ -99,3 +95,12 @@ class LightningTiramisuTester(LightningTiramisu):
             batch_size=self.config.data_params['batch_size'])
         return val_dataloader
 
+
+def _create_test_csv(path_to_csv:str, data_dir:str):
+    headers = "subject,label,t1\n"
+    t1 = join(data_dir, "img.nii.gz")
+    label = join(data_dir, "mask.nii.gz")
+    filenames = f"subj1,{t1},{label}"
+    with open(path_to_csv, "w") as f:
+        f.write(headers)
+        f.write(filenames)

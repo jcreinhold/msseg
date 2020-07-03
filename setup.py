@@ -33,6 +33,10 @@ args = dict(
     keywords="medical image segmentation",
 )
 
-setup(install_requires=['numpy',
-                        'torch',
-                        'torchvision'], **args)
+setup(install_requires=[
+    'pandas',
+    'numpy',
+    'pytorch_lightning',
+    'torch',
+    'torchio',
+    'torchvision'], **args)

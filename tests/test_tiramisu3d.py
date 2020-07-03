@@ -23,10 +23,14 @@ with open(os.devnull, "w") as f:
 
 import msseg
 from msseg.loss import binary_combo_loss
+from msseg.data import csv_to_subjectlist
 from msseg.util import n_dirname
 
 from _test_configs import test_lightningtiramisu3d_config
-from _test_lightningtiramisu import LightningTiramisuTester
+from _test_lightningtiramisu import (
+    _create_test_csv,
+    LightningTiramisuTester
+)
 
 seed_everything(1337)
 
@@ -54,8 +58,13 @@ class LightningTiramisu3d(LightningTiramisuTester):
 
 class TestTiramisu3d(unittest.TestCase):
     def setUp(self):
-        self.net = LightningTiramisu3d(test_lightningtiramisu3d_config, DATA_DIR)
         self.out_dir = tempfile.mkdtemp()
+        csv = join(self.out_dir, "data.csv")
+        _create_test_csv(csv, DATA_DIR)
+        subject_list = csv_to_subjectlist(csv)
+        self.net = LightningTiramisu3d(
+            test_lightningtiramisu3d_config,
+            subject_list)
 
     def tearDown(self):
         shutil.rmtree(self.out_dir)
