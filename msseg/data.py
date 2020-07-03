@@ -51,7 +51,6 @@ def csv_to_subjectlist(filename:str) -> List[torchio.Subject]:
     valid_names = ['ct', 'flair', 'label', 'pd', 't1', 't1c', 't2']
     df = pd.read_csv(filename, index_col='subject')
     names = df.columns.to_list()
-    print(names)
     if any([name not in valid_names for name in names]):
         raise ValueError(f'Column name needs to be in {valid_names}')
 
