@@ -38,7 +38,7 @@ pytorch_packages=(
     torchvision
 )
 
-if [[ "$OSTYPE" != "linux-gnu" ]]; then
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
     if $GPU; then
         pytorch_packages+=("cudatoolkit=$GPU_VERSION")
     else
