@@ -21,6 +21,7 @@ from torch.nn import functional as F
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 
+from pytorch_lightning.utilities.parsing import AttributeDict
 with open(os.devnull, "w") as f:
     with contextlib.redirect_stdout(f):
         import torchio
@@ -31,16 +32,15 @@ from torchio.transforms import (
     RandomElasticDeformation
 )
 
-from msseg.config import ExperimentConfig
 from msseg.experiment.lightningtiramisu import LightningTiramisu
 
 
 class LightningTiramisuTester(LightningTiramisu):
 
     def __init__(self,
-                 config:ExperimentConfig,
+                 hparams:AttributeDict,
                  subject_list:List[torchio.Subject]):
-        super().__init__(config)
+        super().__init__(hparams)
         self.criterion = F.binary_cross_entropy_with_logits
         self.subject_list = subject_list
 
@@ -50,7 +50,7 @@ class LightningTiramisuTester(LightningTiramisu):
         return {'val_loss': avg_loss, 'log': tensorboard_logs}
 
     def configure_optimizers(self):
-        return AdamW(self.parameters(), **self.config.optim_params)
+        return AdamW(self.parameters(), **self.hparams.optim_params)
 
     def train_dataloader(self):
         spatial = OneOf(
@@ -64,35 +64,35 @@ class LightningTiramisuTester(LightningTiramisu):
             self.subject_list, transform=transform)
 
         sampler = torchio.data.UniformSampler(
-            self.config.data_params['patch_size'])
+            self.hparams.data_params['patch_size'])
         patches_queue = torchio.Queue(
             subjects_dataset,
-            self.config.data_params['queue_length'],
-            self.config.data_params['samples_per_volume'],
+            self.hparams.data_params['queue_length'],
+            self.hparams.data_params['samples_per_volume'],
             sampler,
-            num_workers=self.config.data_params['num_workers'],
+            num_workers=self.hparams.data_params['num_workers'],
             shuffle_subjects=True,
             shuffle_patches=True)
         train_dataloader = DataLoader(
             patches_queue,
-            batch_size=self.config.data_params['batch_size'])
+            batch_size=self.hparams.data_params['batch_size'])
         return train_dataloader
 
     def val_dataloader(self):
         subjects_dataset = torchio.ImagesDataset(self.subject_list)
         sampler = torchio.data.UniformSampler(
-            self.config.data_params['patch_size'])
+            self.hparams.data_params['patch_size'])
         patches_queue = torchio.Queue(
             subjects_dataset,
-            self.config.data_params['queue_length'],
-            self.config.data_params['samples_per_volume'],
+            self.hparams.data_params['queue_length'],
+            self.hparams.data_params['samples_per_volume'],
             sampler,
-            num_workers=self.config.data_params['num_workers'],
+            num_workers=self.hparams.data_params['num_workers'],
             shuffle_subjects=False,
             shuffle_patches=False)
         val_dataloader = DataLoader(
             patches_queue,
-            batch_size=self.config.data_params['batch_size'])
+            batch_size=self.hparams.data_params['batch_size'])
         return val_dataloader
 
 

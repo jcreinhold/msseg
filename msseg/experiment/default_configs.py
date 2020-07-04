@@ -10,26 +10,26 @@ Created on: Jul 03, 2020
 __all__ = ['default_lightningtiramisu2d_config',
            'default_lightningtiramisu3d_config']
 
-from msseg.config import ExperimentConfig
+from pytorch_lightning.utilities.parsing import AttributeDict
 
 
-default_lightningtiramisu2d_config = ExperimentConfig(
-    data_params=dict(
+default_lightningtiramisu2d_config = AttributeDict(
+    data_params=AttributeDict(
         batch_size = 16,
         num_workers = 8,
         patch_size = (3, 128, 128),
         queue_length = 100,
         samples_per_volume = 10
     ),
-    lightning_params=dict(
-        init_params = dict(
+    lightning_params=AttributeDict(
+        init_params = AttributeDict(
             init_type='normal',
             gain=0.02
         ),
         n_epochs = 1,
         network_dim = 2,
     ),
-    network_params=dict(
+    network_params=AttributeDict(
         in_channels = 3,
         out_channels = 1,
         down_blocks = (5, 5, 5, 5, 5),
@@ -39,7 +39,7 @@ default_lightningtiramisu2d_config = ExperimentConfig(
         out_chans_first_conv = 48,
         dropout_rate = 0.2
     ),
-    optim_params=dict(
+    optim_params=AttributeDict(
         lr = 1e3,
         betas = (0.9, 0.99),
         weight_decay = 1e-7,
@@ -47,23 +47,23 @@ default_lightningtiramisu2d_config = ExperimentConfig(
 )
 
 
-default_lightningtiramisu3d_config = ExperimentConfig(
-    data_params=dict(
+default_lightningtiramisu3d_config = AttributeDict(
+    data_params=AttributeDict(
         batch_size = 8,
         num_workers = 8,
         patch_size = 64,
         queue_length = 100,
         samples_per_volume = 10
     ),
-    lightning_params=dict(
-        init_params=dict(
+    lightning_params=AttributeDict(
+        init_params=AttributeDict(
             init_type='normal',
             gain=0.02
         ),
         n_epochs=1,
         network_dim=3,
     ),
-    network_params=dict(
+    network_params=AttributeDict(
         in_channels = 1,
         out_channels = 1,
         down_blocks = (4, 4, 4, 4, 4),
@@ -73,7 +73,7 @@ default_lightningtiramisu3d_config = ExperimentConfig(
         out_chans_first_conv = 48,
         dropout_rate = 0.2
     ),
-    optim_params=dict(
+    optim_params=AttributeDict(
         lr = 1e3,
         betas = (0.9, 0.99),
         weight_decay = 1e-7,

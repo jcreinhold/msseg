@@ -13,24 +13,24 @@ from torch import Tensor
 
 import pytorch_lightning as pl
 
-from msseg.config import ExperimentConfig
+from pytorch_lightning.utilities.parsing import AttributeDict
 from msseg.model import Tiramisu2d, Tiramisu3d
 from msseg.util import init_weights
 
 
 class LightningTiramisu(pl.LightningModule):
 
-    def __init__(self, config:ExperimentConfig):
+    def __init__(self, hparams:AttributeDict):
         super().__init__()
-        self.config = config
-        self.network_dim = config.lightning_params["network_dim"]
+        self.hparams = hparams
+        self.network_dim = hparams.lightning_params.network_dim
         if self._use_2d_network:
-            self.net = Tiramisu2d(**config.network_params)
+            self.net = Tiramisu2d(**hparams.network_params)
         elif self._use_3d_network:
-            self.net = Tiramisu3d(**config.network_params)
+            self.net = Tiramisu3d(**hparams.network_params)
         else:
             raise self._invalid_network_dim
-        init_weights(self.net, **config.lightning_params["init_params"])
+        init_weights(self.net, **hparams.lightning_params.init_params)
 
     @property
     def _use_2d_network(self):
