@@ -86,6 +86,7 @@ def binary_focal_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
 def binary_combo_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
                       reduction:str='mean', gamma:float=0., alpha:float=0.5) -> Tensor:
     f_loss = binary_focal_loss(x, y, weight, reduction, gamma)
-    d_loss = dice_loss(x, y, reduction=reduction)
+    p = torch.sigmoid(x)
+    d_loss = dice_loss(p, y, reduction=reduction)
     loss = alpha * f_loss + (1 - alpha) * d_loss
     return loss
