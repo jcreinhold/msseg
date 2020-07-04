@@ -23,14 +23,19 @@ class LightningTiramisu(pl.LightningModule):
     def __init__(self, hparams:AttributeDict):
         super().__init__()
         self.hparams = hparams
-        self.network_dim = hparams.lightning_params.network_dim
+        self._hparams_to_attributedict()
+        self.network_dim = self.hparams.lightning_params["network_dim"]
         if self._use_2d_network:
-            self.net = Tiramisu2d(**hparams.network_params)
+            self.net = Tiramisu2d(**self.hparams.network_params)
         elif self._use_3d_network:
-            self.net = Tiramisu3d(**hparams.network_params)
+            self.net = Tiramisu3d(**self.hparams.network_params)
         else:
             raise self._invalid_network_dim
-        init_weights(self.net, **hparams.lightning_params.init_params)
+        init_weights(self.net, **self.hparams.lightning_params["init_params"])
+
+    def _hparams_to_attributedict(self):
+        if not isinstance(self.hparams, AttributeDict):
+            self.hparams = AttributeDict(self.hparams)
 
     @property
     def _use_2d_network(self):
