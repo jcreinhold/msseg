@@ -15,6 +15,7 @@ import pytorch_lightning as pl
 
 from msseg.config import ExperimentConfig
 from msseg.model import Tiramisu2d, Tiramisu3d
+from msseg.util import init_weights
 
 
 class LightningTiramisu(pl.LightningModule):
@@ -29,6 +30,7 @@ class LightningTiramisu(pl.LightningModule):
             self.net = Tiramisu3d(**config.network_params)
         else:
             raise self._invalid_network_dim
+        init_weights(self.net, **config.lightning_params["init_params"])
 
     @property
     def _use_2d_network(self):
