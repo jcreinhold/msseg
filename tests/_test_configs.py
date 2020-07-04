@@ -22,11 +22,12 @@ test_lightningtiramisu2d_config = ExperimentConfig(
         samples_per_volume = 4
     ),
     lightning_params=dict(
-        network_dim = 2,
         init_params=dict(
             init_type='normal',
             gain=0.02
         ),
+        n_epochs=1,
+        network_dim=2,
     ),
     network_params=dict(
         in_channels = 3,
@@ -55,11 +56,12 @@ test_lightningtiramisu3d_config = ExperimentConfig(
         samples_per_volume = 4
     ),
     lightning_params=dict(
-        network_dim = 3,
         init_params=dict(
             init_type='normal',
             gain=0.02
         ),
+        n_epochs=1,
+        network_dim=3,
     ),
     network_params=dict(
         in_channels = 1,

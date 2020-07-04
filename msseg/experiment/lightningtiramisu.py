@@ -51,27 +51,3 @@ class LightningTiramisu(pl.LightningModule):
 
     def forward(self, x:Tensor) -> Tensor:
         return self.net(x)
-
-    def _2d_training_step(self, batch, batch_idx):
-        raise NotImplementedError
-
-    def _3d_training_step(self, batch, batch_idx):
-        raise NotImplementedError
-
-    def training_step(self, *args):
-        if self._use_2d_network():
-            out_dict = self._2d_training_step(*args)
-        elif self._use_3d_network():
-            out_dict = self._3d_training_step(*args)
-        else:
-            raise self._invalid_network_dim
-        return out_dict
-
-    def validation_step(self, *args):
-        if self._use_2d_network():
-            out_dict = self._2d_training_step(*args)
-        elif self._use_3d_network():
-            out_dict = self._3d_training_step(*args)
-        else:
-            raise self._invalid_network_dim
-        return out_dict
