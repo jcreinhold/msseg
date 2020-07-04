@@ -30,7 +30,6 @@ def _is_batchnorm(layer):
 def init_weights(net, init_type:str='normal', gain:float=0.02):
     def init_func(layer):
         if _is_conv(layer):
-            print("Conv")
             if init_type == 'normal':
                 init.normal_(layer.weight.data, 0.0, gain)
             elif init_type == 'xavier':
@@ -45,7 +44,6 @@ def init_weights(net, init_type:str='normal', gain:float=0.02):
             if hasattr(layer, 'bias') and layer.bias is not None:
                 init.constant_(layer.bias.data, 0.0)
         elif _is_batchnorm(layer):
-            print("BatchNorm")
             init.normal_(layer.weight.data, 1.0, gain)
             init.constant_(layer.bias.data, 0.0)
     net.apply(init_func)
