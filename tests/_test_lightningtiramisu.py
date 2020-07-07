@@ -96,11 +96,16 @@ class LightningTiramisuTester(LightningTiramisu):
         return val_dataloader
 
 
-def _create_test_csv(path_to_csv:str, data_dir:str):
-    headers = "subject,label,t1\n"
+def _create_test_csv(path_to_csv:str, data_dir:str, weight:bool=False):
     t1 = join(data_dir, "img.nii.gz")
     label = join(data_dir, "mask.nii.gz")
+    headers = "subject,label,t1"
     filenames = f"subj1,{t1},{label}"
+    if weight:
+        headers += ",weight\n"
+        filenames += ",0.9"
+    else:
+        headers += "\n"
     with open(path_to_csv, "w") as f:
         f.write(headers)
         f.write(filenames)

@@ -79,6 +79,21 @@ class TestTiramisu3d(unittest.TestCase):
                 progress_bar_refresh_rate=0)
             trainer.fit(self.net)
 
+    def test_weight(self):
+        csv = join(self.out_dir, "data.csv")
+        _create_test_csv(csv, DATA_DIR, weight=True)
+        subject_list = csv_to_subjectlist(csv)
+        self.net = LightningTiramisu3d(
+            test_lightningtiramisu3d_config,
+            subject_list)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            trainer = Trainer(
+                default_root_dir=self.out_dir,
+                fast_dev_run=True,
+                progress_bar_refresh_rate=0)
+            trainer.fit(self.net)
+
     def test_combo_loss(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
