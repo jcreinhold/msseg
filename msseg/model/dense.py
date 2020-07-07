@@ -20,6 +20,8 @@ __all__ = ['Bottleneck2d',
 
 from typing import *
 
+from functools import partial
+
 import torch
 from torch import Tensor
 from torch import nn
@@ -38,6 +40,7 @@ class ConvLayer(nn.Sequential):
 
     def __init__(self, in_channels:int, growth_rate:int, dropout_rate:float=0.2):
         super().__init__()
+        self.dropout_rate = dropout_rate
         self.add_module('norm', self._norm(in_channels))
         self.add_module('act', ACTIVATION())
         if self._use_padding():
@@ -45,9 +48,13 @@ class ConvLayer(nn.Sequential):
         self.add_module('conv', self._conv(in_channels, growth_rate,
                                            self._kernel_size,
                                            bias=False))
-        self.add_module('drop', self._dropout(dropout_rate))
+        if self._use_dropout():
+            self.add_module('drop', self._dropout(dropout_rate))
         if self._use_maxpool():
             self.add_module('maxpool', self._maxpool(2))
+
+    def _use_dropout(self):
+        return self.dropout_rate > 0.
 
     def _use_padding(self):
         return self._kernel_size > 2
@@ -58,7 +65,7 @@ class ConvLayer(nn.Sequential):
 
 class ConvLayer2d(ConvLayer):
     _conv        = nn.Conv2d
-    _dropout     = nn.Dropout2d
+    _dropout     = partial(nn.Dropout2d, inplace=True)
     _kernel_size = 3
     _maxpool     = None
     _norm        = nn.BatchNorm2d
@@ -67,7 +74,7 @@ class ConvLayer2d(ConvLayer):
 
 class ConvLayer3d(ConvLayer):
     _conv        = nn.Conv3d
-    _dropout     = nn.Dropout3d
+    _dropout     = partial(nn.Dropout3d, inplace=True)
     _kernel_size = 3
     _maxpool     = None
     _norm        = nn.BatchNorm3d
@@ -122,7 +129,7 @@ class DenseBlock3d(DenseBlock):
 
 class TransitionDown2d(ConvLayer):
     _conv = nn.Conv2d
-    _dropout = nn.Dropout2d
+    _dropout = partial(nn.Dropout2d, inplace=True)
     _kernel_size  = 1
     _maxpool = nn.MaxPool2d
     _norm = nn.BatchNorm2d
@@ -131,7 +138,7 @@ class TransitionDown2d(ConvLayer):
 
 class TransitionDown3d(ConvLayer):
     _conv = nn.Conv3d
-    _dropout = nn.Dropout3d
+    _dropout = partial(nn.Dropout3d, inplace=True)
     _kernel_size  = 1
     _maxpool = nn.MaxPool3d
     _norm = nn.BatchNorm3d
