@@ -175,8 +175,8 @@ class TransitionUp2d(TransitionUp):
     def _crop_to_y(x:Tensor, y:Tensor) -> Tensor:
         _, _, max_height, max_width = y.shape
         _, _, h, w = x.size()
-        w = (w - max_width) // 2
         h = (h - max_height) // 2
+        w = (w - max_width) // 2
         return x[:, :, h:(h + max_height), w:(w + max_width)]
 
 
@@ -187,10 +187,10 @@ class TransitionUp3d(TransitionUp):
     def _crop_to_y(x:Tensor, y:Tensor) -> Tensor:
         _, _, max_height, max_width, max_depth = y.shape
         _, _, h, w, d = x.size()
-        w = (w - max_width) // 2
         h = (h - max_height) // 2
+        w = (w - max_width) // 2
         d = (d - max_depth) // 2
-        return x[:, :, d:(d + max_depth), h:(h + max_height), w:(w + max_width)]
+        return x[:, :, h:(h + max_height), w:(w + max_width), d:(d + max_depth)]
 
 
 class Bottleneck(nn.Sequential):
