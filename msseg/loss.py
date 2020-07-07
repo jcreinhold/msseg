@@ -78,6 +78,8 @@ def binary_focal_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
         loss = loss.sum()
     elif reduction == "batchwise_mean":
         loss = loss.sum(0)
+    elif reduction == "none":
+        pass
     else:
         raise NotImplementedError(f'{reduction} not implemented.')
     return loss
