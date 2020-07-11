@@ -141,7 +141,9 @@ if __name__ == "__main__":
                       bottleneck_layers=2)
     x = torch.randn(1,1,32,32)
     net2d = Tiramisu2d(**net_kwargs)
-    net2d(x)
+    y = net2d(x)
+    assert x.shape == y.shape
     x = torch.randn(1,1,32,32,32)
     net3d = Tiramisu3d(**net_kwargs)
-    net3d(x)
+    y = net3d(x)
+    assert x.shape == y.shape

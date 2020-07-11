@@ -53,13 +53,13 @@ class ConvLayer(nn.Sequential):
         if self._use_maxpool():
             self.add_module('maxpool', self._maxpool(2))
 
-    def _use_dropout(self):
+    def _use_dropout(self) -> bool:
         return self.dropout_rate > 0.
 
-    def _use_padding(self):
+    def _use_padding(self) -> bool:
         return self._kernel_size > 2
 
-    def _use_maxpool(self):
+    def _use_maxpool(self) -> bool:
         return self._maxpool is not None
 
 
