@@ -10,7 +10,9 @@ Created on: Jul 12, 2020
 """
 
 __all__ = ['GridAttentionBlock2d',
-           'GridAttentionBlock3d']
+           'GridAttentionBlock3d',
+           'AttentionTiramisu2d',
+           'AttentionTiramisu3d']
 
 from typing import *
 
@@ -151,9 +153,10 @@ class AttentionTiramisu(nn.Module):
             dsv_channel_count = prev_block_channels if not_last_block else \
                 cur_channels_count
             self.deepSupervision.append(
-                self._conv(dsv_channel_count, 1, 1))
+                self._conv(dsv_channel_count, out_channels, 1))
 
-        self.finalConv = self._conv(n_downsamples, out_channels,
+        self.finalConv = self._conv(n_downsamples*out_channels,
+                                    out_channels,
                                     final_kernel_size, bias=True)
 
     @property
@@ -219,7 +222,9 @@ if __name__ == "__main__":
     g = torch.randn(2,1,16,16,16)
     y = attention_block(x, g)
     assert x.shape == y.shape
-    net = AttentionTiramisu3d(1,1)
-    print(net)
+    net_kwargs = dict(in_channels=1, out_channels=1,
+                      down_blocks=[2,2], up_blocks=[2,2],
+                      bottleneck_layers=2)
+    net = AttentionTiramisu3d(**net_kwargs)
     y = net(x)
     assert x.shape == y.shape
