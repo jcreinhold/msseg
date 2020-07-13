@@ -19,6 +19,8 @@ from torch import Tensor
 from torch import nn
 from torch.nn import functional as F
 
+from msseg.model.dense import *
+
 
 class GridAttentionBlock(nn.Module):
 
@@ -26,8 +28,10 @@ class GridAttentionBlock(nn.Module):
     _norm        = None
     _upsample    = None
 
-    def __init__(self, in_channels:int, gating_channels:int, inter_channels:int):
+    def __init__(self, in_channels:int, gating_channels:int, inter_channels:Optional[int]=None):
         super().__init__()
+        if inter_channels is None:
+            inter_channels = in_channels
 
         self.W = nn.Sequential(
             self._conv(in_channels, in_channels, 1),
@@ -73,9 +77,149 @@ class GridAttentionBlock2d(GridAttentionBlock):
     _upsample = "bilinear"
 
 
+class AttentionTiramisu(nn.Module):
+
+    _attention  = None
+    _bottleneck = None
+    _conv       = None
+    _denseblock = None
+    _pad        = None
+    _trans_down = None
+    _trans_up   = None
+    _upsample   = None
+
+    def __init__(self,
+                 in_channels:int=3,
+                 out_channels:int=1,
+                 down_blocks:List[int]=(5,5,5,5,5),
+                 up_blocks:List[int]=(5,5,5,5,5),
+                 bottleneck_layers:int=5,
+                 growth_rate:int=16,
+                 out_chans_first_conv:int=48,
+                 dropout_rate:float=0.2):
+        super().__init__()
+        self.down_blocks = down_blocks
+        self.up_blocks = up_blocks
+        first_kernel_size = 3
+        final_kernel_size = 1
+        skip_connection_channel_counts = []
+        n_downsamples = len(down_blocks)
+
+        self.firstConv = nn.Sequential(
+            self._pad(first_kernel_size // 2),
+            self._conv(in_channels, out_chans_first_conv,
+                       first_kernel_size, bias=False))
+        cur_channels_count = out_chans_first_conv
+
+        ## Downsampling path ##
+        self.denseBlocksDown = nn.ModuleList([])
+        self.transDownBlocks = nn.ModuleList([])
+        for n_layers in down_blocks:
+            self.denseBlocksDown.append(self._denseblock(
+                cur_channels_count, growth_rate, n_layers,
+                upsample=False, dropout_rate=dropout_rate))
+            cur_channels_count += (growth_rate*n_layers)
+            skip_connection_channel_counts.insert(0, cur_channels_count)
+            self.transDownBlocks.append(self._trans_down(
+                cur_channels_count, cur_channels_count,
+                dropout_rate=dropout_rate))
+
+        self.bottleneck = self._bottleneck(
+            cur_channels_count, growth_rate, bottleneck_layers,
+            dropout_rate=dropout_rate)
+        prev_block_channels = growth_rate*bottleneck_layers
+        cur_channels_count += prev_block_channels
+
+        ## Upsampling path ##
+        self.transUpBlocks   = nn.ModuleList([])
+        self.denseBlocksUp   = nn.ModuleList([])
+        self.attentionGates  = nn.ModuleList([])
+        self.deepSupervision = nn.ModuleList([])
+        up_info = zip(up_blocks, skip_connection_channel_counts)
+        for i, (n_layers, sccc) in enumerate(up_info, 1):
+            self.attentionGates.append(self._attention(
+                sccc, prev_block_channels))
+            self.transUpBlocks.append(self._trans_up(
+                prev_block_channels, prev_block_channels))
+            cur_channels_count = prev_block_channels + sccc
+            not_last_block = i < len(up_blocks)  # do not upsample on last block
+            self.denseBlocksUp.append(self._denseblock(
+                cur_channels_count, growth_rate, n_layers,
+                upsample=not_last_block, dropout_rate=dropout_rate))
+            prev_block_channels = growth_rate*n_layers
+            cur_channels_count += prev_block_channels
+            dsv_channel_count = prev_block_channels if not_last_block else \
+                cur_channels_count
+            self.deepSupervision.append(
+                self._conv(dsv_channel_count, 1, 1))
+
+        self.finalConv = self._conv(n_downsamples, out_channels,
+                                    final_kernel_size, bias=True)
+
+    @property
+    def _down_blocks(self):
+        return zip(self.denseBlocksDown, self.transDownBlocks)
+
+    @property
+    def _up_blocks(self):
+        return zip(self.denseBlocksUp, self.transUpBlocks,
+                   self.attentionGates, self.deepSupervision)
+
+    def _interp(self, x, size):
+        return F.interpolate(x, size, mode=self._upsample, align_corners=True)
+
+    def forward(self, x:Tensor) -> Tensor:
+        x_size = x.shape[2:]
+        out = self.firstConv(x)
+        skip_connections = []
+        for dbd, tdb in self._down_blocks:
+            out = dbd(out)
+            skip_connections.append(out)
+            out = tdb(out)
+        out = self.bottleneck(out)
+        dsvs = []
+        for ubd, tub, atg, dsl in self._up_blocks:
+            skip = skip_connections.pop()
+            skip = atg(skip, out)
+            out = tub(out, skip)
+            out = ubd(out)
+            dsv = dsl(out)
+            dsv = self._interp(dsv, x_size)
+            dsvs.append(dsv)
+        out = torch.cat(dsvs, 1)
+        out = self.finalConv(out)
+        return out
+
+
+class AttentionTiramisu2d(AttentionTiramisu):
+    _attention  = GridAttentionBlock2d
+    _bottleneck = Bottleneck2d
+    _conv       = nn.Conv2d
+    _denseblock = DenseBlock2d
+    _pad        = nn.ReplicationPad2d
+    _trans_down = TransitionDown2d
+    _trans_up   = TransitionUp2d
+    _upsample   = 'bilinear'
+
+
+class AttentionTiramisu3d(AttentionTiramisu):
+    _attention  = GridAttentionBlock3d
+    _bottleneck = Bottleneck3d
+    _conv       = nn.Conv3d
+    _denseblock = DenseBlock3d
+    _pad        = nn.ReplicationPad3d
+    _trans_down = TransitionDown3d
+    _trans_up   = TransitionUp3d
+    _upsample   = 'trilinear'
+
+
 if __name__ == "__main__":
-    attention_block = GridAttentionBlock3d(1,1,1)
+    attention_block = GridAttentionBlock3d(1,1)
     x = torch.randn(2,1,32,32,32)
     g = torch.randn(2,1,16,16,16)
     y = attention_block(x, g)
+    assert x.shape == y.shape
+    net = AttentionTiramisu3d(1,1)
+    print(net)
+    y = net(x)
     assert x.shape == y.shape
