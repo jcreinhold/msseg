@@ -92,3 +92,21 @@ def binary_combo_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
     d_loss = dice_loss(p, y, reduction=reduction)
     loss = alpha * f_loss + (1 - alpha) * d_loss
     return loss
+
+
+def deeply_supervised_loss(xs:List[Tensor], y:Tensor, loss_func:Callable,
+                           level_weights:Union[float,List[float]]=1.,
+                           **loss_func_kwargs) -> Tensor:
+    if isinstance(level_weights, float):
+        level_weights = [level_weights] * len(xs)
+    loss = 0.
+    for lw, x in zip(level_weights, xs):
+        loss += lw * loss_func(x, y, **loss_func_kwargs)
+    return loss
+
+
+if __name__ == "__main__":
+    x = torch.randn(1,1,32,32)
+    xs = [x] * 2
+    y = torch.randn(1,1,32,32)
+    loss = deeply_supervised_loss(xs, y, binary_combo_loss, [0.5, 1.], weight=0.6)

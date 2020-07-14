@@ -22,6 +22,7 @@ from torch import nn
 from torch.nn import functional as F
 
 from msseg.model.dense import *
+from msseg.model.dense import ACTIVATION
 
 
 class GridAttentionBlock(nn.Module):
@@ -37,7 +38,8 @@ class GridAttentionBlock(nn.Module):
 
         self.W = nn.Sequential(
             self._conv(in_channels, in_channels, 1),
-            self._norm(in_channels)
+            self._norm(in_channels),
+            ACTIVATION()
         )
 
         self.theta = self._conv(in_channels, inter_channels, 2, stride=2, bias=False)
@@ -62,20 +64,20 @@ class GridAttentionBlock(nn.Module):
         psi_f = torch.sigmoid(psi_f)
         psi_f = self._interp(psi_f, input_size)
 
-        y = psi_f.expand_as(x) * x
+        y = psi_f * x
         W_y = self.W(y)
         return W_y
 
 
 class GridAttentionBlock3d(GridAttentionBlock):
-    _conv = nn.Conv3d
-    _norm = nn.BatchNorm3d
+    _conv     = nn.Conv3d
+    _norm     = nn.BatchNorm3d
     _upsample = "trilinear"
 
 
 class GridAttentionBlock2d(GridAttentionBlock):
-    _conv = nn.Conv2d
-    _norm = nn.BatchNorm2d
+    _conv     = nn.Conv2d
+    _norm     = nn.BatchNorm2d
     _upsample = "bilinear"
 
 
@@ -105,7 +107,6 @@ class AttentionTiramisu(nn.Module):
         first_kernel_size = 3
         final_kernel_size = 1
         skip_connection_channel_counts = []
-        n_downsamples = len(down_blocks)
 
         self.firstConv = nn.Sequential(
             self._pad(first_kernel_size // 2),
@@ -153,11 +154,8 @@ class AttentionTiramisu(nn.Module):
             dsv_channel_count = prev_block_channels if not_last_block else \
                 cur_channels_count
             self.deepSupervision.append(
-                self._conv(dsv_channel_count, out_channels, 1))
-
-        self.finalConv = self._conv(n_downsamples*out_channels,
-                                    out_channels,
-                                    final_kernel_size, bias=True)
+                self._conv(dsv_channel_count, out_channels,
+                           final_kernel_size))
 
     @property
     def _down_blocks(self):
@@ -168,10 +166,10 @@ class AttentionTiramisu(nn.Module):
         return zip(self.denseBlocksUp, self.transUpBlocks,
                    self.attentionGates, self.deepSupervision)
 
-    def _interp(self, x, size):
+    def _interp(self, x:Tensor, size:Tuple[int]) -> Tensor:
         return F.interpolate(x, size, mode=self._upsample, align_corners=True)
 
-    def forward(self, x:Tensor) -> Tensor:
+    def forward(self, x:Tensor) -> List[Tensor]:
         x_size = x.shape[2:]
         out = self.firstConv(x)
         skip_connections = []
@@ -189,9 +187,7 @@ class AttentionTiramisu(nn.Module):
             dsv = dsl(out)
             dsv = self._interp(dsv, x_size)
             dsvs.append(dsv)
-        out = torch.cat(dsvs, 1)
-        out = self.finalConv(out)
-        return out
+        return dsvs
 
 
 class AttentionTiramisu2d(AttentionTiramisu):
@@ -227,4 +223,4 @@ if __name__ == "__main__":
                       bottleneck_layers=2)
     net = AttentionTiramisu3d(**net_kwargs)
     y = net(x)
-    assert x.shape == y.shape
+    assert all([x.shape == yi.shape for yi in y])
