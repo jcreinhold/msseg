@@ -19,6 +19,7 @@ Created on: Jul 01, 2020
 
 __all__ = ['binary_combo_loss',
            'binary_focal_loss',
+           'deeply_supervised_loss',
            'dice_loss']
 
 

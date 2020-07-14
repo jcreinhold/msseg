@@ -189,6 +189,22 @@ class AttentionTiramisu(nn.Module):
             dsvs.append(dsv)
         return dsvs
 
+    def predict(self, x:Tensor) -> Tensor:
+        out = self.firstConv(x)
+        skip_connections = []
+        for dbd, tdb in self._down_blocks:
+            out = dbd(out)
+            skip_connections.append(out)
+            out = tdb(out)
+        out = self.bottleneck(out)
+        for ubd, tub, atg, _ in self._up_blocks:
+            skip = skip_connections.pop()
+            skip = atg(skip, out)
+            out = tub(out, skip)
+            out = ubd(out)
+        out = self.deepSupervision[-1](out)
+        return out
+
 
 class AttentionTiramisu2d(AttentionTiramisu):
     _attention  = GridAttentionBlock2d
@@ -224,3 +240,5 @@ if __name__ == "__main__":
     net = AttentionTiramisu3d(**net_kwargs)
     y = net(x)
     assert all([x.shape == yi.shape for yi in y])
+    y = net.predict(x)
+    assert x.shape == y.shape
