@@ -8,9 +8,11 @@
 # Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 
 GPU=false
+ENV_NAME="msseg"
 if [[ "$1" == "--gpu" ]]; then
   GPU=true
   GPU_VERSION=$2
+  ENV_NAME="msseg-$GPU_VERSION"
 fi
 
 if [[ "$OSTYPE" != "linux-gnu" && "$OSTYPE" != "darwin"* ]]; then
@@ -52,8 +54,8 @@ conda_forge_packages=(
     pytorch-lightning
 )
 
-conda create -n msseg python "${packages[@]}" -y
-conda activate msseg
+conda create -n ${ENV_NAME} python "${packages[@]}" -y
+conda activate ${ENV_NAME}
 conda install -c pytorch "${pytorch_packages[@]}" -y
 conda install -c conda-forge "${conda_forge_packages[@]}" -y
 #conda install -c simpleitk simpleitk -y
