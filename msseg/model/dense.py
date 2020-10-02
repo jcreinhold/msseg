@@ -26,7 +26,7 @@ import torch
 from torch import Tensor
 from torch import nn
 
-ACTIVATION = nn.GELU
+ACTIVATION = partial(nn.ReLU, inplace=True)
 
 
 class ConvLayer(nn.Sequential):
