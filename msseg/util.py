@@ -22,9 +22,9 @@ def _is_conv(layer):
     return (hasattr(layer, 'weight') and 'Conv' in classname)
 
 
-def _is_batchnorm(layer):
+def _is_norm(layer):
     classname = layer.__class__.__name__
-    return (hasattr(layer, 'weight') and 'BatchNorm' in classname)
+    return (hasattr(layer, 'weight') and 'Norm' in classname)
 
 
 def init_weights(net, init_type:str='normal', gain:float=0.02):
@@ -35,9 +35,9 @@ def init_weights(net, init_type:str='normal', gain:float=0.02):
             elif init_type == 'xavier_normal':
                 init.xavier_normal_(layer.weight.data, gain=gain)
             elif init_type == 'he_normal':
-                init.kaiming_normal_(layer.weight.data, a=0, mode='fan_in')
+                init.kaiming_normal_(layer.weight.data, a=0.01, mode='fan_in')
             elif init_type == 'he_uniform':
-                init.kaiming_uniform_(layer.weight.data, a=0, mode='fan_in')
+                init.kaiming_uniform_(layer.weight.data, a=0.01, mode='fan_in')
             elif init_type == 'orthogonal':
                 init.orthogonal_(layer.weight.data, gain=gain)
             else:
@@ -45,7 +45,7 @@ def init_weights(net, init_type:str='normal', gain:float=0.02):
                 raise NotImplementedError(err_msg)
             if hasattr(layer, 'bias') and layer.bias is not None:
                 init.constant_(layer.bias.data, 0.0)
-        elif _is_batchnorm(layer):
+        elif _is_norm(layer):
             init.normal_(layer.weight.data, 1.0, gain)
             init.constant_(layer.bias.data, 0.0)
     net.apply(init_func)

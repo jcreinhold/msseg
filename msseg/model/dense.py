@@ -26,7 +26,7 @@ import torch
 from torch import Tensor
 from torch import nn
 
-ACTIVATION = partial(nn.ReLU, inplace=True)
+ACTIVATION = partial(nn.LeakyReLU, inplace=True)
 
 
 class ConvLayer(nn.Sequential):
@@ -77,7 +77,7 @@ class ConvLayer3d(ConvLayer):
     _dropout     = partial(nn.Dropout3d, inplace=True)
     _kernel_size = 3
     _maxpool     = None
-    _norm        = nn.BatchNorm3d
+    _norm        = partial(nn.InstanceNorm3d, affine=True)
     _pad         = nn.ReplicationPad3d
 
 
