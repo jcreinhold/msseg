@@ -54,16 +54,16 @@ def csv_to_subjectlist(filename:str) -> List[torchio.Subject]:
             id/name of the subject (must be unique).
             Row will fill in the filenames per type.
             Other columns headers must be one of:
-            ct, flair, label, pd, t1, t1c, t2, weight
+            ct, flair, label, pd, t1, t1c, t2, weight, div
             (`label` should correspond to a
              segmentation mask)
-            (`weight` should correspond to a float)
+            (`weight` and `div` should correspond to a float)
 
     Returns:
         subject_list (List[torchio.Subject]):
     """
     valid_names = ['ct', 'flair', 'label', 'pd',
-                   't1', 't1c', 't2', 'weight']
+                   't1', 't1c', 't2', 'weight', 'div']
     df = pd.read_csv(filename, index_col='subject')
     names = df.columns.to_list()
     if any([name not in valid_names for name in names]):
@@ -76,7 +76,7 @@ def csv_to_subjectlist(filename:str) -> List[torchio.Subject]:
         for name in names:
             type = _check_type(name)
             val = row[1][name]
-            if name == "weight":
+            if name == "weight" or name == "div":
                 data[name] = torch.tensor(val, dtype=torch.float32)
             else:
                 data[name] = torchio.Image(val, type=type)
