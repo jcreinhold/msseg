@@ -32,10 +32,12 @@ def init_weights(net, init_type:str='normal', gain:float=0.02):
         if _is_conv(layer):
             if init_type == 'normal':
                 init.normal_(layer.weight.data, 0.0, gain)
-            elif init_type == 'xavier':
+            elif init_type == 'xavier_normal':
                 init.xavier_normal_(layer.weight.data, gain=gain)
-            elif init_type == 'kaiming':
+            elif init_type == 'he_normal':
                 init.kaiming_normal_(layer.weight.data, a=0, mode='fan_in')
+            elif init_type == 'he_uniform':
+                init.kaiming_uniform_(layer.weight.data, a=0, mode='fan_in')
             elif init_type == 'orthogonal':
                 init.orthogonal_(layer.weight.data, gain=gain)
             else:
