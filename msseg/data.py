@@ -60,7 +60,7 @@ def csv_to_subjectlist(filename:str) -> List[torchio.Subject]:
             (`weight` and `div` should correspond to a float)
 
     Returns:
-        subject_list (List[torchio.Subject]):
+        subject_list (List[torchio.Subject]): list of torchio Subjects
     """
     valid_names = ['ct', 'flair', 'label', 'pd',
                    't1', 't1c', 't2', 'weight', 'div']
