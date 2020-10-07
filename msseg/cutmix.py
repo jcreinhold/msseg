@@ -96,9 +96,10 @@ class CutMixCollator:
 
 
 class CutMixCriterion:
-    def __init__(self, criterion:Callable, reduction:str='mean'):
-        self.criterion = partial(criterion, reduction=reduction)
+    def __init__(self, criterion:Callable):
+        self.criterion = criterion
 
-    def __call__(self, preds, targets):
+    def __call__(self, preds, targets, reduction:str='mean'):
         tgt, s_tgt, lam = targets
-        return lam * self.criterion(preds, tgt) + (1 - lam) * self.criterion(preds, s_tgt)
+        return (lam * self.criterion(preds, tgt, reduction=reduction) +
+                (1 - lam) * self.criterion(preds, s_tgt, reduction=reduction))
