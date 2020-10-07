@@ -53,11 +53,18 @@ class Tiramisu(nn.Module):
                  dropout_rate:float=0.2,
                  p_shakedrop:float=0.):
         super().__init__()
+        assert len(down_blocks) == len(up_blocks)
         self.down_blocks = down_blocks
         self.up_blocks = up_blocks
         first_kernel_size = 3
         final_kernel_size = 1
         skip_connection_channel_counts = []
+        n_units = len(down_blocks)
+        linear_decay_rule = lambda i: 1 - (1.0 - (p_shakedrop / n_units) * (i + 1))
+        if p_shakedrop > 0.:
+            ps_shakedrop = [linear_decay_rule(i) for i in range(n_units)]
+        else:
+            ps_shakedrop = [0. for _ in range(n_units)]
 
         self.firstConv = nn.Sequential(
             self._pad(first_kernel_size // 2),
@@ -68,11 +75,11 @@ class Tiramisu(nn.Module):
         ## Downsampling path ##
         self.denseBlocksDown = nn.ModuleList([])
         self.transDownBlocks = nn.ModuleList([])
-        for n_layers in down_blocks:
+        for psd, n_layers in zip(ps_shakedrop, down_blocks):
             self.denseBlocksDown.append(self._denseblock(
                 cur_channels_count, growth_rate, n_layers,
                 upsample=False, dropout_rate=dropout_rate,
-                p_shakedrop=p_shakedrop))
+                p_shakedrop=psd))
             cur_channels_count += (growth_rate*n_layers)
             skip_connection_channel_counts.insert(0, cur_channels_count)
             self.transDownBlocks.append(self._trans_down(
@@ -88,8 +95,11 @@ class Tiramisu(nn.Module):
         ## Upsampling path ##
         self.transUpBlocks = nn.ModuleList([])
         self.denseBlocksUp = nn.ModuleList([])
-        up_info = zip(up_blocks, skip_connection_channel_counts)
-        for i, (n_layers, sccc) in enumerate(up_info, 1):
+        up_info = zip(up_blocks,
+                      skip_connection_channel_counts,
+                      reversed(ps_shakedrop))
+
+        for i, (n_layers, sccc, psd) in enumerate(up_info, 1):
             self.transUpBlocks.append(self._trans_up(
                 prev_block_channels, prev_block_channels))
             cur_channels_count = prev_block_channels + sccc
@@ -97,7 +107,7 @@ class Tiramisu(nn.Module):
             self.denseBlocksUp.append(self._denseblock(
                 cur_channels_count, growth_rate, n_layers,
                 upsample=upsample, dropout_rate=dropout_rate,
-                p_shakedrop=p_shakedrop))
+                p_shakedrop=psd))
             prev_block_channels = growth_rate*n_layers
             cur_channels_count += prev_block_channels
 
@@ -141,7 +151,7 @@ class Tiramisu3d(Tiramisu):
 if __name__ == "__main__":
     net_kwargs = dict(in_channels=1, out_channels=1,
                       down_blocks=[2,2], up_blocks=[2,2],
-                      bottleneck_layers=2, p_shakedrop=1.)
+                      bottleneck_layers=2, p_shakedrop=0.5)
     x = torch.randn(1,1,32,32)
     net2d = Tiramisu2d(**net_kwargs)
     y = net2d(x)
