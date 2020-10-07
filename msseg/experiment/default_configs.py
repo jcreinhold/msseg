@@ -37,7 +37,8 @@ default_lightningtiramisu2d_config = AttributeDict(
         bottleneck_layers = 5,
         growth_rate = 16,
         out_chans_first_conv = 48,
-        dropout_rate = 0.2
+        dropout_rate = 0.2,
+        p_shakedrop=0.,
     ),
     optim_params=dict(
         lr = 1e3,

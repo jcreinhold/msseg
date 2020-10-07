@@ -50,7 +50,8 @@ class Tiramisu(nn.Module):
                  bottleneck_layers:int=5,
                  growth_rate:int=16,
                  out_chans_first_conv:int=48,
-                 dropout_rate:float=0.2):
+                 dropout_rate:float=0.2,
+                 p_shakedrop:float=0.):
         super().__init__()
         self.down_blocks = down_blocks
         self.up_blocks = up_blocks
@@ -70,7 +71,8 @@ class Tiramisu(nn.Module):
         for n_layers in down_blocks:
             self.denseBlocksDown.append(self._denseblock(
                 cur_channels_count, growth_rate, n_layers,
-                upsample=False, dropout_rate=dropout_rate))
+                upsample=False, dropout_rate=dropout_rate,
+                p_shakedrop=p_shakedrop))
             cur_channels_count += (growth_rate*n_layers)
             skip_connection_channel_counts.insert(0, cur_channels_count)
             self.transDownBlocks.append(self._trans_down(
@@ -79,7 +81,7 @@ class Tiramisu(nn.Module):
 
         self.bottleneck = self._bottleneck(
             cur_channels_count, growth_rate, bottleneck_layers,
-            dropout_rate=dropout_rate)
+            dropout_rate=dropout_rate, p_shakedrop=p_shakedrop)
         prev_block_channels = growth_rate*bottleneck_layers
         cur_channels_count += prev_block_channels
 
@@ -94,7 +96,8 @@ class Tiramisu(nn.Module):
             upsample = i < len(up_blocks)  # do not upsample on last block
             self.denseBlocksUp.append(self._denseblock(
                 cur_channels_count, growth_rate, n_layers,
-                upsample=upsample, dropout_rate=dropout_rate))
+                upsample=upsample, dropout_rate=dropout_rate,
+                p_shakedrop=p_shakedrop))
             prev_block_channels = growth_rate*n_layers
             cur_channels_count += prev_block_channels
 
@@ -138,7 +141,7 @@ class Tiramisu3d(Tiramisu):
 if __name__ == "__main__":
     net_kwargs = dict(in_channels=1, out_channels=1,
                       down_blocks=[2,2], up_blocks=[2,2],
-                      bottleneck_layers=2)
+                      bottleneck_layers=2, p_shakedrop=1.)
     x = torch.randn(1,1,32,32)
     net2d = Tiramisu2d(**net_kwargs)
     y = net2d(x)

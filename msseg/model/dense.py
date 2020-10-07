@@ -26,6 +26,8 @@ import torch
 from torch import Tensor
 from torch import nn
 
+from msseg.model.shakedrop import ShakeDrop
+
 ACTIVATION = partial(nn.LeakyReLU, inplace=True)
 
 
@@ -86,13 +88,15 @@ class DenseBlock(nn.Module):
     _layer = None
 
     def __init__(self, in_channels:int, growth_rate:int, n_layers:int,
-                 upsample:bool=False, dropout_rate:float=0.2):
+                 upsample:bool=False, dropout_rate:float=0.2, p_shakedrop:float=0.):
         super().__init__()
         self.in_channels = in_channels
         self.growth_rate = growth_rate
         self.n_layers = n_layers
         self.upsample = upsample
         self.dropout_rate = dropout_rate
+        self.use_shakedrop = p_shakedrop > 0.
+        self.shakedrop = ShakeDrop(p_shakedrop)
         self.layers = nn.ModuleList([
             self._layer(ic, self.growth_rate, self.dropout_rate)
             for ic in self.in_channels_range])
@@ -105,12 +109,16 @@ class DenseBlock(nn.Module):
             # Note that all concatenation is done on the channel axis (i.e., 1)
             for layer in self.layers:
                 out = layer(x)
+                if self.use_shakedrop:
+                    out = self.shakedrop(out)
                 x = torch.cat([x, out], 1)
                 new_features.append(out)
             return torch.cat(new_features, 1)
         else:
             for layer in self.layers:
                 out = layer(x)
+                if self.use_shakedrop:
+                    out = self.shakedrop(out)
                 x = torch.cat([x, out], 1)
             return x
 
@@ -197,11 +205,13 @@ class Bottleneck(nn.Sequential):
 
     _layer = None
 
-    def __init__(self, in_channels:int, growth_rate:int, n_layers:int, dropout_rate:float=0.2):
+    def __init__(self, in_channels:int, growth_rate:int, n_layers:int,
+                 dropout_rate:float=0.2, p_shakedrop:float=0.):
         super().__init__()
         self.add_module('bottleneck', self._layer(
             in_channels, growth_rate, n_layers,
-            upsample=True, dropout_rate=dropout_rate))
+            upsample=True, dropout_rate=dropout_rate,
+            p_shakedrop=p_shakedrop))
 
 
 class Bottleneck2d(Bottleneck):
