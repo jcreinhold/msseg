@@ -5,6 +5,7 @@ msseg.cutmix
 
 implementation of cutmix based on
 https://github.com/hysts/pytorch_cutmix
+modified for segmentation
 
 Author: Jacob Reinhold (jacob.reinhold@jhu.edu)
 Created on: Oct 07, 2020
@@ -12,12 +13,7 @@ Created on: Oct 07, 2020
 
 __all__ = ['cutmix2d',
            'cutmix3d',
-           'CutMixCollator',
-           'CutMixCriterion']
-
-from typing import *
-
-from functools import partial
+           'CutMixCollator']
 
 import numpy as np
 import torch
@@ -43,7 +39,7 @@ def cutmix2d(batch, alpha:float=1.):
     y1 = int(np.round(min(cy + h / 2, image_h)))
 
     data[:, :, y0:y1, x0:x1] = shuffled_data[:, :, y0:y1, x0:x1]
-    targets = (targets, shuffled_targets, lam)
+    targets[:,:,y0:y1,x0:x1] = shuffled_targets[:,:,y0:y1,x0:x1]
 
     return data, targets
 
@@ -72,7 +68,7 @@ def cutmix3d(batch, alpha:float=1.):
     z1 = int(np.round(min(cz + d / 2, image_d)))
 
     data[:,:,z0:z1,y0:y1,x0:x1] = shuffled_data[:,:,z0:z1,y0:y1,x0:x1]
-    targets = (targets, shuffled_targets, lam)
+    targets[:,:,z0:z1,y0:y1,x0:x1] = shuffled_targets[:,:,z0:z1,y0:y1,x0:x1]
 
     return data, targets
 
@@ -93,13 +89,3 @@ class CutMixCollator:
         else:
             raise NotImplementedError('Only 2 and 3 dimensional images are supported.')
         return batch
-
-
-class CutMixCriterion:
-    def __init__(self, criterion:Callable):
-        self.criterion = criterion
-
-    def __call__(self, preds, targets, reduction:str='mean'):
-        tgt, s_tgt, lam = targets
-        return (lam * self.criterion(preds, tgt, reduction=reduction) +
-                (1 - lam) * self.criterion(preds, s_tgt, reduction=reduction))
