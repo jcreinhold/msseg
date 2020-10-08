@@ -28,7 +28,7 @@ from torch import nn
 
 from msseg.model.shakedrop import ShakeDrop
 
-ACTIVATION = partial(nn.LeakyReLU, inplace=True)
+ACTIVATION = partial(nn.ReLU, inplace=True)
 
 
 class ConvLayer(nn.Sequential):
