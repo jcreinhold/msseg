@@ -96,7 +96,8 @@ class DenseBlock(nn.Module):
         self.upsample = upsample
         self.dropout_rate = dropout_rate
         self.use_shakedrop = p_shakedrop > 0.
-        self.shakedrop = ShakeDrop(p_shakedrop)
+        if self.use_shakedrop:
+            self.shakedrop = ShakeDrop(p_shakedrop)
         self.layers = nn.ModuleList([
             self._layer(ic, self.growth_rate, self.dropout_rate)
             for ic in self.in_channels_range])
