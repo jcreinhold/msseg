@@ -25,11 +25,6 @@ From inside this directory, run:
 or (if you'd like to make updates to the package)
 
     python setup.py develop
-    
-Tutorial
---------
-
-[5 minute Overview](https://github.com/jcreinhold/selfsupervised3d/blob/master/tutorials/5min_tutorial.md)
 
 Test Package
 ------------
@@ -40,3 +35,6 @@ Unit tests can be run from the main directory as follows:
 
 References
 ---------------
+
+ [1] Zhang, Huahong, et al. "Multiple sclerosis lesion segmentation with Tiramisu and 2.5D stacked slices."
+     International Conference on Medical Image Computing and Computer-Assisted Intervention. Springer, Cham, 2019.
