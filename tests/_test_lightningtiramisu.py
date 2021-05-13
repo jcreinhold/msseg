@@ -22,6 +22,7 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader
 
 from pytorch_lightning.utilities.parsing import AttributeDict
+
 with open(os.devnull, "w") as f:
     with contextlib.redirect_stdout(f):
         import torchio
@@ -38,8 +39,8 @@ from msseg.experiment.lightningtiramisu import LightningTiramisu
 class LightningTiramisuTester(LightningTiramisu):
 
     def __init__(self,
-                 hparams:AttributeDict,
-                 subject_list:List[torchio.Subject]):
+                 hparams: AttributeDict,
+                 subject_list: List[torchio.Subject]):
         super().__init__(hparams)
         self.criterion = F.binary_cross_entropy_with_logits
         self.subject_list = subject_list
@@ -96,7 +97,7 @@ class LightningTiramisuTester(LightningTiramisu):
         return val_dataloader
 
 
-def _create_test_csv(path_to_csv:str, data_dir:str, weight:bool=False):
+def _create_test_csv(path_to_csv: str, data_dir: str, weight: bool = False):
     t1 = join(data_dir, "img.nii.gz")
     label = join(data_dir, "mask.nii.gz")
     headers = "subject,label,t1"

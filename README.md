@@ -1,9 +1,12 @@
-msseg
-=====
+tiramisu
+========
 
-PyTorch-based deep neural network for multiple sclerosis lesion segmentation; specifically, T2 lesions in the brain.
+A PyTorch implementation of a 2D and 3D Tiramisu convolutional neural network.
 
-This package was developed by [Jacob Reinhold](https://jcreinhold.github.io) and the other students and researchers of the 
+This package is primarily used for multiple sclerosis (MS) lesion segmentation; specifically, T2 lesions in the brain.
+
+This package was developed by [Jacob Reinhold](https://jcreinhold.github.io)
+and the other students and researchers of the
 [Image Analysis and Communication Lab (IACL)](http://iacl.ece.jhu.edu/index.php/Main_Page).
 
 Requirements
@@ -36,5 +39,8 @@ Unit tests can be run from the main directory as follows:
 References
 ---------------
 
- [1] Zhang, Huahong, et al. "Multiple sclerosis lesion segmentation with Tiramisu and 2.5D stacked slices."
-     International Conference on Medical Image Computing and Computer-Assisted Intervention. Springer, Cham, 2019.
+[1] Jégou, Simon, et al. "The one hundred layers tiramisu: Fully convolutional densenets for semantic segmentation."
+CVPR. 2017.
+
+[2] Zhang, Huahong, et al. "Multiple sclerosis lesion segmentation with Tiramisu and 2.5D stacked slices." International
+Conference on Medical Image Computing and Computer-Assisted Intervention. Springer, Cham, 2019.

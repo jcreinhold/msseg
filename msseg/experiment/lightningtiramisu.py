@@ -20,7 +20,7 @@ from msseg.util import init_weights
 
 class LightningTiramisu(pl.LightningModule):
 
-    def __init__(self, hparams:AttributeDict):
+    def __init__(self, hparams: AttributeDict):
         super().__init__()
         self.hparams = hparams
         self._hparams_to_attributedict()
@@ -51,8 +51,8 @@ class LightningTiramisu(pl.LightningModule):
         return ValueError(err_msg)
 
     @staticmethod
-    def criterion(x:Tensor, y:Tensor) -> Tensor:
+    def criterion(x: Tensor, y: Tensor) -> Tensor:
         raise NotImplementedError
 
-    def forward(self, x:Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return self.net(x)

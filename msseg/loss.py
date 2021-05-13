@@ -22,7 +22,6 @@ __all__ = ['binary_combo_loss',
            'deeply_supervised_loss',
            'dice_loss']
 
-
 from typing import *
 
 import torch
@@ -30,7 +29,7 @@ from torch import Tensor
 import torch.nn.functional as F
 
 
-def per_channel_dice(x:Tensor, y:Tensor, eps:float=1e-3, keepdim:bool=False) -> Tensor:
+def per_channel_dice(x: Tensor, y: Tensor, eps: float = 1e-3, keepdim: bool = False) -> Tensor:
     spatial_dims = tuple(range(2 - len(x.shape), 0))
     intersection = torch.sum(x * y, dim=spatial_dims, keepdim=keepdim)
     x_sum = torch.sum(x, dim=spatial_dims, keepdim=keepdim)
@@ -39,14 +38,14 @@ def per_channel_dice(x:Tensor, y:Tensor, eps:float=1e-3, keepdim:bool=False) -> 
     return pc_dice
 
 
-def weighted_channel_avg(x:Tensor, weight:Tensor) -> Tensor:
+def weighted_channel_avg(x: Tensor, weight: Tensor) -> Tensor:
     weight = weight[None, ...].repeat([x.shape[0], 1])
     weighted = torch.mean(weight * x)
     return weighted
 
 
-def dice_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
-              reduction:str='mean', eps:float=1e-3) -> Tensor:
+def dice_loss(x: Tensor, y: Tensor, weight: Optional[Tensor] = None,
+              reduction: str = 'mean', eps: float = 1e-3) -> Tensor:
     keepdim = reduction != 'mean'
     pc_dice = per_channel_dice(x, y, eps=eps, keepdim=keepdim)
     if reduction == 'mean':
@@ -61,8 +60,8 @@ def dice_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
     return 1 - dice
 
 
-def binary_focal_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
-                      reduction:str='mean', gamma:float=2.) -> Tensor:
+def binary_focal_loss(x: Tensor, y: Tensor, weight: Optional[Tensor] = None,
+                      reduction: str = 'mean', gamma: float = 2.) -> Tensor:
     ce_loss = F.binary_cross_entropy_with_logits(x, y, reduction="none")
     if gamma > 0.:
         p = torch.sigmoid(x)
@@ -86,8 +85,8 @@ def binary_focal_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
     return loss
 
 
-def binary_combo_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
-                      reduction:str='mean', gamma:float=0., alpha:float=0.5) -> Tensor:
+def binary_combo_loss(x: Tensor, y: Tensor, weight: Optional[Tensor] = None,
+                      reduction: str = 'mean', gamma: float = 0., alpha: float = 0.5) -> Tensor:
     f_loss = binary_focal_loss(x, y, weight, reduction, gamma)
     p = torch.sigmoid(x)
     d_loss = dice_loss(p, y, reduction=reduction)
@@ -95,8 +94,8 @@ def binary_combo_loss(x:Tensor, y:Tensor, weight:Optional[Tensor]=None,
     return loss
 
 
-def deeply_supervised_loss(xs:List[Tensor], y:Tensor, loss_func:Callable,
-                           level_weights:Union[float,List[float]]=1.,
+def deeply_supervised_loss(xs: List[Tensor], y: Tensor, loss_func: Callable,
+                           level_weights: Union[float, List[float]] = 1.,
                            **loss_func_kwargs) -> Tensor:
     if isinstance(level_weights, float):
         level_weights = [level_weights] * len(xs)
@@ -107,7 +106,7 @@ def deeply_supervised_loss(xs:List[Tensor], y:Tensor, loss_func:Callable,
 
 
 if __name__ == "__main__":
-    x = torch.randn(1,1,32,32)
+    x = torch.randn(1, 1, 32, 32)
     xs = [x] * 2
-    y = torch.randn(1,1,32,32)
+    y = torch.randn(1, 1, 32, 32)
     loss = deeply_supervised_loss(xs, y, binary_combo_loss, [0.5, 1.], weight=0.6)

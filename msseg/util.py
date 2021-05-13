@@ -27,7 +27,7 @@ def _is_norm(layer):
     return (hasattr(layer, 'weight') and 'Norm' in classname)
 
 
-def init_weights(net, init_type:str='normal', gain:float=0.02):
+def init_weights(net, init_type: str = 'normal', gain: float = 0.02):
     def init_func(layer):
         if _is_conv(layer):
             if init_type == 'normal':
@@ -48,10 +48,11 @@ def init_weights(net, init_type:str='normal', gain:float=0.02):
         elif _is_norm(layer):
             init.normal_(layer.weight.data, 1.0, gain)
             init.constant_(layer.bias.data, 0.0)
+
     net.apply(init_func)
 
 
-def n_dirname(path:str, n:int) -> str:
+def n_dirname(path: str, n: int) -> str:
     """ return n-th dirname from basename """
     dirname = path
     for _ in range(n):
@@ -61,6 +62,7 @@ def n_dirname(path:str, n:int) -> str:
 
 if __name__ == "__main__":
     from torch import nn
-    net = nn.Sequential(nn.Conv1d(1,1,1),
+
+    net = nn.Sequential(nn.Conv1d(1, 1, 1),
                         nn.BatchNorm1d(1))
     init_weights(net)

@@ -42,7 +42,7 @@ class LightningTiramisu2d(LightningTiramisuTester):
 
     def training_step(self, batch, batch_idx):
         x = batch['t1'][torchio.DATA].squeeze()
-        y = batch['label'][torchio.DATA].squeeze()[:,1:2,...]
+        y = batch['label'][torchio.DATA].squeeze()[:, 1:2, ...]
         y_hat = self.forward(x)
         loss = self.criterion(y_hat, y)
         tensorboard_logs = {'train_loss': loss}
@@ -50,7 +50,7 @@ class LightningTiramisu2d(LightningTiramisuTester):
 
     def validation_step(self, batch, batch_idx):
         x = batch['t1'][torchio.DATA].squeeze()
-        y = batch['label'][torchio.DATA].squeeze()[:,1:2,...]
+        y = batch['label'][torchio.DATA].squeeze()[:, 1:2, ...]
         y_hat = self.forward(x)
         loss = self.criterion(y_hat, y)
         return {'val_loss': loss}

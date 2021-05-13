@@ -26,16 +26,19 @@ with open(os.devnull, "w") as f:
     with contextlib.redirect_stdout(f):
         import torchio
 
-Type = Union[torchio.LABEL,torchio.INTENSITY,None]
+Type = Union[torchio.LABEL, torchio.INTENSITY, None]
+
+VALID_NAMES = ('ct', 'flair', 'label', 'pd',
+               't1', 't1c', 't2', 'weight', 'div')
 
 
-def glob_ext(path:str, ext:str='*.nii*') -> List[str]:
+def glob_ext(path: str, ext: str = '*.nii*') -> List[str]:
     """ grab all `ext` files in a directory and sort them for consistency """
     fns = sorted(glob(join(path, ext)))
     return fns
 
 
-def _check_type(name:str) -> Type:
+def _check_type(name: str) -> Type:
     if name == "label":
         type = torchio.LABEL
     elif name == "weight":
@@ -45,7 +48,7 @@ def _check_type(name:str) -> Type:
     return type
 
 
-def csv_to_subjectlist(filename:str) -> List[torchio.Subject]:
+def csv_to_subjectlist(filename: str) -> List[torchio.Subject]:
     """ Convert a csv file to a list of torchio subjects
 
     Args:
@@ -62,12 +65,10 @@ def csv_to_subjectlist(filename:str) -> List[torchio.Subject]:
     Returns:
         subject_list (List[torchio.Subject]): list of torchio Subjects
     """
-    valid_names = ['ct', 'flair', 'label', 'pd',
-                   't1', 't1c', 't2', 'weight', 'div']
     df = pd.read_csv(filename, index_col='subject')
     names = df.columns.to_list()
-    if any([name not in valid_names for name in names]):
-        raise ValueError(f'Column name needs to be in {valid_names}')
+    if any([name not in VALID_NAMES for name in names]):
+        raise ValueError(f'Column name needs to be in {VALID_NAMES}')
 
     subject_list = []
     for row in df.iterrows():
