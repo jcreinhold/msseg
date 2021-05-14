@@ -1,6 +1,8 @@
 msseg
 =====
 
+**This repo has been deprecated. See [tiramisu-brulee](https://github.com/jcreinhold/tiramisu-brulee) for a maintained version.**
+
 PyTorch-based deep neural network for multiple sclerosis lesion segmentation; specifically, T2 lesions in the brain.
 
 This package was developed by [Jacob Reinhold](https://jcreinhold.github.io) and the other students and researchers of the 
