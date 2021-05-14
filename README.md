@@ -1,5 +1,7 @@
-tiramisu
-========
+msseg
+=====
+
+**This repo has been deprecated. See [tiramisu-brulee](https://github.com/jcreinhold/tiramisu-brulee) for a maintained version.**
 
 A PyTorch implementation of a 2D and 3D Tiramisu convolutional neural network.
 
